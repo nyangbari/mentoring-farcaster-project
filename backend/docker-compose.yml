@@ -1,0 +1,15 @@
+services:
+  db:
+    image: postgres:15                # 사용할 도커 이미지 (PostgreSQL 15버전)
+    container_name: mfp-postgres      # 컨테이너 이름
+    environment:                      # 환경 변수 (PostgreSQL 초기 설정용)
+      POSTGRES_USER: mfp              # DB 사용자 이름
+      POSTGRES_PASSWORD: mfp1234      # DB 비밀번호
+      POSTGRES_DB: mfp                # 생성할 기본 데이터베이스 이름
+    ports:
+      - "5432:5432"                   # 호스트(로컬PC) 포트 : 컨테이너 내부 포트
+    volumes:
+      - pgdata:/var/lib/postgresql/data  # 데이터 영구 저장 볼륨
+
+volumes:
+  pgdata:  # 데이터 영구 저장용 볼륨 이름

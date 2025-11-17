@@ -25,11 +25,40 @@ export default function CreateReviewRequestPage() {
     deadline: "",
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Form submitted:", formData);
-    // TODO: API 호출 및 처리
-    router.back();
+
+    // 폼 데이터를 API 형식에 맞게 변환
+    const requestData = {
+      user_id: "user_temp_001", // TODO: 실제 로그인한 사용자 ID로 교체 필요
+      title: formData.title,
+      category: formData.category,
+      description: formData.content,
+      reward: parseFloat(formData.amount),
+      deadline: formData.deadline,
+    };
+
+    try {
+      const response = await fetch('/api/review-request', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestData),
+      });
+
+      if (!response.ok) {
+        throw new Error(`API 호출 실패: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log("API 응답:", data);
+      alert("리뷰 요청이 성공적으로 전송되었습니다!");
+      router.back();
+    } catch (error) {
+      console.error("API 호출 에러:", error);
+      alert(`요청 실패: ${error instanceof Error ? error.message : '알 수 없는 오류'}`);
+    }
   };
 
   return (

@@ -5,6 +5,7 @@ import { AppService } from './app.service';
 import { UserService } from './user/user.service';
 import { UserModule } from './user/user.module';
 import { AuthModule } from './auth/auth.module';
+import { ReviewRequestModule } from './review-request/review-request.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { AuthModule } from './auth/auth.module';
     }),
     UserModule,
     AuthModule,
+    ReviewRequestModule,
   ],
   controllers: [AppController],
   providers: [AppService, UserService],

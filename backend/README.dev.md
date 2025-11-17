@@ -123,3 +123,60 @@ docker compose -f docker-compose.watch.yml down
 - 포트 충돌이나 권한 문제 발생 시 `docker ps`와 `docker compose logs <service>`로 로그를 확인하세요.
 
 위 절차를 README.dev.md에 추가했습니다. 필요하시면 팀 규칙(브랜치 네이밍, PR 템플릿, 코드 스타일 등)도 덧붙여 정리해 드리겠습니다.
+
+---
+
+**pnpm으로 전환하기 (마이그레이션 가이드)**
+
+프로젝트를 `pnpm`으로 전환하려면 아래 단계를 따르세요. 변경 사항은 팀에 공유하고 `pnpm-lock.yaml` 파일을 커밋해야 합니다.
+
+1) 로컬에 pnpm 설치(권장: Corepack 사용)
+
+```bat
+REM Node 16+에서는 corepack 사용 가능
+corepack enable
+corepack prepare pnpm@latest --activate
+```
+
+만약 corepack이 없다면(구버전 Node) 또는 빠르게 설치하려면:
+
+```bat
+npm install -g pnpm
+```
+
+2) 기존 lockfile이 있는 경우(pnpm으로 변환)
+
+```bat
+cd C:\path\to\repo\backend
+REM package-lock.json이 있다면 pnpm import로 변환
+pnpm import
+```
+
+3) pnpm으로 의존성 설치 및 lock 생성
+
+```bat
+pnpm install
+```
+
+이제 `pnpm-lock.yaml`이 생성됩니다. 변경 내용을 커밋하세요:
+
+```bat
+git add pnpm-lock.yaml
+git commit -m "chore: add pnpm lockfile"
+```
+
+4) Dockerfile 변경
+
+이미 이 저장소의 `Dockerfile`은 pnpm을 사용하도록 업데이트되어 있습니다. (이미 `corepack prepare pnpm@latest --activate`를 통해 pnpm을 활성화하고 `pnpm install`을 수행합니다.)
+
+5) CI/빌드 환경 업데이트
+
+- CI에서는 빌드 스크립트에 `corepack enable && corepack prepare pnpm@latest --activate` 또는 `npm i -g pnpm`을 추가해 pnpm을 활성화하세요.
+- Docker 빌드시 `pnpm-lock.yaml`이 같이 복사되어 있으면 `--frozen-lockfile` 옵션으로 재현 가능한 설치가 가능합니다.
+
+6) 팀 공지
+
+- 모든 개발자는 동일한 패키지 매니저(pnpm)와 lockfile(`pnpm-lock.yaml`)을 사용하도록 안내하세요.
+- 로컬 개발 시 기존 `node_modules`를 지우고(`rm -rf node_modules` 또는 Windows에서 `rd /s /q node_modules`) `pnpm install`을 실행하도록 권장합니다.
+
+문제가 발생하면 제가 CI/Docker 설정을 직접 업데이트해 드릴 수 있습니다. 원하시면 `pnpm-lock.yaml`을 생성한 뒤 커밋하는 과정까지 도와드리겠습니다.

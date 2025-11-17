@@ -1,3 +1,40 @@
+Compose V2 개발용 실행 가이드
+
+요약
+- 이 프로젝트는 `docker compose`(Compose V2) 의 `--watch` 기능을 사용해 파일 변경을 컨테이너로 자동 동기화하고 개발 편의성을 높일 수 있습니다.
+- 기존 `docker-compose.yml`은 하이픈형 `docker-compose`(v1)에서 사용 중일 수 있으므로 별도의 V2 전용 파일 `docker-compose.watch.yml`을 추가했습니다.
+
+사전 조건
+- Docker Desktop 또는 Docker Engine이 설치되어 있고 `docker compose`(공백) 명령을 지원해야 합니다. (Compose V2 2.22.0 이상 권장)
+
+버전 확인
+```bat
+docker compose version
+docker-compose version
+```
+`docker compose version`이 출력되지 않거나 낮은 버전이면 Docker Desktop 설정에서 Compose V2를 활성화하거나 Docker를 업데이트하세요.
+
+사용 방법
+1. 개발용 `watch` 실행 (로그와 파일 동기화 이벤트가 섞여 나옵니다):
+```bat
+cd backend
+docker compose -f docker-compose.watch.yml up --watch
+```
+
+2. 백그라운드로 띄우고 로그만 보려면:
+```bat
+docker compose -f docker-compose.watch.yml up -d --build
+docker compose -f docker-compose.watch.yml logs -f app
+```
+
+3. 종료/재시작:
+```bat
+docker compose -f docker-compose.watch.yml down
+```
+
+팁
+- Windows에서 파일 감지 안정성이 떨어지면 `CHOKIDAR_USEPOLLING=true` 환경변수를 사용합니다(이미 `docker-compose.watch.yml`에 포함).
+- `watch` 구성이 동작하려면 이미지에 `stat`, `mkdir`, `rmdir`가 있어야 하고, 컨테이너의 실행 유저가 `target` 경로에 쓸 수 있어야 합니다.
 
 **협업자 빠른 시작 (Windows - cmd.exe 예시)**
 

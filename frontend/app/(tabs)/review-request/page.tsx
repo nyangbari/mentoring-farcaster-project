@@ -7,6 +7,7 @@ import ReviewRequestItem from "@/components/custom/ReviewRequestItem";
 
 interface ReviewRequestData {
   id: number;
+  user_id: string;
   title: string;
   category: string;
   description: string;
@@ -113,8 +114,8 @@ export default function ReviewRequestPage() {
           <ReviewRequestItem
             key={item.id}
             author={{
-              name: `User ${item.id}`, // TODO: 실제 사용자 정보로 교체 필요
-              avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=user${item.id}`,
+              name: item.user_id,
+              avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${item.user_id}`,
             }}
             date={formatDate(item.deadline)}
             title={item.title}

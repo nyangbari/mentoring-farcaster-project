@@ -40,7 +40,7 @@ export default function ReviewRequestItem({
 
   return (
     <Card className="w-full">
-      <CardHeader className="pb-1">
+      <CardHeader className="pb-0">
         <div className="flex items-center gap-3">
           {/* 작성자 아바타 */}
           <Avatar className="h-10 w-10">
@@ -56,12 +56,12 @@ export default function ReviewRequestItem({
         </div>
       </CardHeader>
 
-      <CardContent className="space-y-1">
+      <CardContent className="space-y-1 pt-0">
         {/* 제목 */}
         <h3 className="font-bold text-lg">{title}</h3>
 
         {/* 요청 내용 */}
-        <p className="text-sm text-gray-600 dark:text-gray-400">
+        <p className="text-sm pb-2 text-gray-600 dark:text-gray-400">
           {truncateContent(content)}
         </p>
 

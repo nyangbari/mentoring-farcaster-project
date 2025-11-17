@@ -1,25 +1,78 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import ReviewRequestItem from "@/components/custom/ReviewRequestItem";
 
+interface ReviewRequestData {
+  id: number;
+  title: string;
+  category: string;
+  description: string;
+  reward: number;
+  deadline: string;
+}
+
+interface ApiResponse {
+  items: ReviewRequestData[];
+  total_items: number;
+}
+
 export default function ReviewRequestPage() {
   const router = useRouter();
-  // 예시 데이터
-  const items = Array.from({ length: 10 }, (_, i) => ({
-    id: i + 1,
-    author: {
-      name: `User ${i + 1}`,
-      avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=user${i + 1}`,
-    },
-    date: "2024.11.14",
-    title: `리뷰 요청 제목 ${i + 1}`,
-    content: "이 부분에 대해 리뷰를 요청드립니다. 코드의 구조와 로직, 그리고 성능 최적화 측면에서 피드백을 받고 싶습니다. 특히 에러 핸들링 부분이 적절한지 확인 부탁드립니다.",
-    reward: 10 + i * 5,
-    commentCount: Math.floor(Math.random() * 20),
-    validPeriod: "5일 남음",
-  }));
+  const [items, setItems] = useState<ReviewRequestData[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+
+  // 페이지 로딩 시 API 호출
+  useEffect(() => {
+    const fetchReviewRequests = async () => {
+      try {
+        setIsLoading(true);
+        const response = await fetch(`/api/review-request?page=${page}&limit=10`);
+
+        if (!response.ok) {
+          throw new Error(`API 호출 실패: ${response.status}`);
+        }
+
+        const data: ApiResponse = await response.json();
+        setItems(data.items);
+        setTotalItems(data.total_items);
+        setError(null);
+      } catch (err) {
+        console.error("리뷰 요청 목록 조회 실패:", err);
+        setError(err instanceof Error ? err.message : "알 수 없는 오류");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchReviewRequests();
+  }, [page]);
+
+  // 날짜를 "YYYY.MM.DD" 형식으로 변환
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}.${month}.${day}`;
+  };
+
+  // 마감일까지 남은 기간 계산
+  const calculateRemainingDays = (deadline: string) => {
+    const today = new Date();
+    const deadlineDate = new Date(deadline);
+    const diffTime = deadlineDate.getTime() - today.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    if (diffDays < 0) return "마감";
+    if (diffDays === 0) return "오늘 마감";
+    return `${diffDays}일 남음`;
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-black">
@@ -38,19 +91,47 @@ export default function ReviewRequestPage() {
 
       {/* Content */}
       <div className="flex flex-col gap-4 p-4">
-        {items.map((item) => (
+        {isLoading && (
+          <div className="text-center py-8 text-gray-500">
+            로딩 중...
+          </div>
+        )}
+
+        {error && (
+          <div className="text-center py-8 text-red-500">
+            에러: {error}
+          </div>
+        )}
+
+        {!isLoading && !error && items.length === 0 && (
+          <div className="text-center py-8 text-gray-500">
+            등록된 리뷰 요청이 없습니다.
+          </div>
+        )}
+
+        {!isLoading && !error && items.map((item) => (
           <ReviewRequestItem
             key={item.id}
-            author={item.author}
-            date={item.date}
+            author={{
+              name: `User ${item.id}`, // TODO: 실제 사용자 정보로 교체 필요
+              avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=user${item.id}`,
+            }}
+            date={formatDate(item.deadline)}
             title={item.title}
-            content={item.content}
+            content={item.description}
             reward={item.reward}
-            commentCount={item.commentCount}
-            validPeriod={item.validPeriod}
+            commentCount={0} // TODO: 댓글 수 API 추가 필요
+            validPeriod={calculateRemainingDays(item.deadline)}
           />
         ))}
       </div>
+
+      {/* Pagination info */}
+      {!isLoading && !error && items.length > 0 && (
+        <div className="text-center py-4 text-sm text-gray-500">
+          총 {totalItems}개의 리뷰 요청
+        </div>
+      )}
     </div>
   );
 }

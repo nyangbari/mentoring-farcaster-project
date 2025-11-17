@@ -28,6 +28,12 @@ export default function CreateReviewRequestPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    // 카테고리 필수 체크
+    if (!formData.category) {
+      alert("카테고리를 선택해주세요.");
+      return;
+    }
+
     // 폼 데이터를 API 형식에 맞게 변환
     const requestData = {
       user_id: "user_temp_001", // TODO: 실제 로그인한 사용자 ID로 교체 필요
@@ -104,6 +110,7 @@ export default function CreateReviewRequestPage() {
               onValueChange={(value) =>
                 setFormData({ ...formData, category: value })
               }
+              required
             >
               <SelectTrigger className="bg-white dark:bg-gray-900">
                 <SelectValue placeholder="카테고리를 선택하세요" />

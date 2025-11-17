@@ -28,7 +28,7 @@ services:
       CHOKIDAR_USEPOLLING: "true"
       CHOKIDAR_INTERVAL: "100"
     command: npm run start:dev
-    
+
   pgadmin:
     image: dpage/pgadmin4
     restart: always

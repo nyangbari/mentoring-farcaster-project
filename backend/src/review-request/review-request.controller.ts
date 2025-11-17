@@ -19,13 +19,13 @@ export class ReviewRequestController {
 
   @Get()
   @ApiQuery({ name: 'page', required: false, type: Number })
-  @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiOkResponse({ description: 'Paged list of review requests' })
-  async findAll(@Query('page') page?: string, @Query('limit') limit?: string) {
-    const result = await this.service.findPaged(Number(page ?? '1'), Number(limit ?? '10'));
+  async findAll(@Query('page') page?: string) {
+    const result = await this.service.findPaged(Number(page ?? '1'), Number('10'));
 
     const mappedItems = result.items.map((it) => ({
       id: it.id,
+      user_id: it.user_id,
       title: it.title,
       category: it.category,
       description: it.description,

@@ -3,17 +3,60 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Spinner } from "@/components/ui/spinner";
+import { sdk } from "@farcaster/miniapp-sdk";
+import { useUserStore } from "@/lib/store/userStore";
 
 export default function RootPage() {
   const router = useRouter();
+  const { setUser, setIsLoading, setIsMiniApp } = useUserStore();
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      router.push("/home");
-    }, 2000);
+    const initSDK = async() => {
+      try {
+        setIsLoading(true);
+        const inMiniApp = await sdk.isInMiniApp();
+        setIsMiniApp(inMiniApp);
 
-    return () => clearTimeout(timer);
-  }, [router]);
+        if (inMiniApp) {
+          await sdk.actions.ready();
+          const context = await sdk.context;
+          const contextUser = context.user;
+
+          const res = await fetch(`/api/userdata?fid=${contextUser.fid}`);
+          const additionalProfile = await res.json();
+
+          const userData = {
+            fid: contextUser.fid,
+            username: contextUser.username || '',
+            displayName: contextUser.displayName || '',
+            pfpUrl: contextUser.pfpUrl || '',
+            profile: additionalProfile
+          };
+
+          setUser(userData);
+
+          // 잠시 후 홈으로 리다이렉트
+          setTimeout(() => {
+            router.push("/home");
+          }, 1000);
+        } else {
+          // 웹 접속인 경우
+          alert("web");
+          setIsLoading(false);
+
+          // 웹 접속도 홈으로 리다이렉트
+          setTimeout(() => {
+            router.push("/home");
+          }, 1000);
+        }
+
+      } catch (error) {
+        console.error("Login Err:", error);
+        setIsLoading(false);
+      }
+    };
+    initSDK();
+  }, [router, setUser, setIsLoading, setIsMiniApp]);
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-white dark:bg-black">

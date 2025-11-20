@@ -1,9 +1,7 @@
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
-  CardTitle,
 } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { MessageCircle, Clock, Coins } from "lucide-react";
@@ -19,6 +17,7 @@ interface ReviewRequestItemProps {
   reward: number; // 보상 코인
   commentCount: number; // 댓글 개수
   validPeriod: string; // 유효 기간
+  onClick?: () => void; // 클릭 이벤트 핸들러
 }
 
 export default function ReviewRequestItem({
@@ -29,6 +28,7 @@ export default function ReviewRequestItem({
   reward,
   commentCount,
   validPeriod,
+  onClick,
 }: ReviewRequestItemProps) {
   // 내용이 길면 잘라내고 ...추가
   const truncateContent = (text: string, maxLength: number = 100) => {
@@ -39,7 +39,10 @@ export default function ReviewRequestItem({
   };
 
   return (
-    <Card className="w-full">
+    <Card
+      className="w-full cursor-pointer hover:shadow-lg transition-shadow"
+      onClick={onClick}
+    >
       <CardHeader className="pb-0">
         <div className="flex items-center gap-3">
           {/* 작성자 아바타 */}

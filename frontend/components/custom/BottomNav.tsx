@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, FileText, ClipboardList, Settings } from "lucide-react";
+import { Home, FileText, ClipboardList, User } from "lucide-react";
 
 const tabs = [
   {
@@ -16,14 +16,14 @@ const tabs = [
     icon: ClipboardList,
   },
   {
-    name: "리뷰 작성",
+    name: "내 리뷰 요청",
     href: "/reviews",
     icon: FileText,
   },
   {
-    name: "설정",
-    href: "/settings",
-    icon: Settings,
+    name: "마이페이지",
+    href: "/mypage",
+    icon: User,
   },
 ];
 

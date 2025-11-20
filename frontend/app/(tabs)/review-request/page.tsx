@@ -123,6 +123,7 @@ export default function ReviewRequestPage() {
             reward={item.reward}
             commentCount={0} // TODO: 댓글 수 API 추가 필요
             validPeriod={calculateRemainingDays(item.deadline)}
+            onClick={() => router.push(`/review-request/${item.id}`)}
           />
         ))}
       </div>

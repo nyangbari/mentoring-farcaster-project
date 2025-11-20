@@ -25,6 +25,15 @@ export default function CreateReviewRequestPage() {
     deadline: "",
   });
 
+  // 토큰 잔액 확인 함수 (추후 구현 예정)
+  const checkTokenBalance = async (requiredAmount: number): Promise<boolean> => {
+    // TODO: 실제 지갑 연결 및 토큰 잔액 확인 로직 구현
+    console.log(`토큰 잔액 확인 중... 필요한 금액: ${requiredAmount}`);
+
+    // 임시 반환값 (추후 실제 검증 로직으로 교체)
+    return true;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -34,13 +43,29 @@ export default function CreateReviewRequestPage() {
       return;
     }
 
+    const rewardAmount = parseFloat(formData.amount);
+
+    // 토큰 잔액 확인
+    try {
+      const hasEnoughBalance = await checkTokenBalance(rewardAmount);
+
+      if (!hasEnoughBalance) {
+        alert("토큰 잔액이 부족합니다. 지갑을 확인해주세요.");
+        return;
+      }
+    } catch (error) {
+      console.error("토큰 잔액 확인 에러:", error);
+      alert("토큰 잔액 확인 중 오류가 발생했습니다.");
+      return;
+    }
+
     // 폼 데이터를 API 형식에 맞게 변환
     const requestData = {
       user_id: "user_temp_001", // TODO: 실제 로그인한 사용자 ID로 교체 필요
       title: formData.title,
       category: formData.category,
       description: formData.content,
-      reward: parseFloat(formData.amount),
+      reward: rewardAmount,
       deadline: formData.deadline,
     };
 

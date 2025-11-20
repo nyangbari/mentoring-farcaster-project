@@ -27,10 +27,7 @@ services:
       JWT_EXPIRES: 1h
       CHOKIDAR_USEPOLLING: "true"
       CHOKIDAR_INTERVAL: "100"
-    command: npm run start:dev
-    volumes:
-      - ./:/usr/src/app
-      - app_node_modules:/usr/src/app/node_modules
+      NODE_ENV: development
 
   pgadmin:
     image: dpage/pgadmin4

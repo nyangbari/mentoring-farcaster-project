@@ -1,20 +1,34 @@
-FROM node:20-alpine
+FROM node:20-alpine AS builder
 
 WORKDIR /usr/src/app
 
-# Copy package manifest and lockfile (if present)
+# Copy package manifest and lockfile
 COPY package.json pnpm-lock.yaml* ./
 
-# Enable corepack and prepare pnpm, fall back to installing pnpm globally if corepack not available
-RUN corepack enable || true && corepack prepare pnpm@latest --activate || npm i -g pnpm
+# Enable corepack and prepare pnpm
+RUN corepack enable && corepack prepare pnpm@latest --activate
 
-# Install dependencies. If a pnpm lockfile exists, use `--frozen-lockfile` to ensure reproducible installs.
-RUN pnpm install --frozen-lockfile || pnpm install
+# Install all dependencies (including devDependencies) for building
+RUN pnpm install --frozen-lockfile
 
-# Copy rest of the source
+# Copy app source and build
 COPY . .
-
-# Build and expose
 RUN pnpm run build
+
+FROM node:20-alpine AS runner
+
+WORKDIR /usr/src/app
+
+# Set production env
+ENV NODE_ENV=production
+
+# Copy package manifest and lockfile to install only production deps
+COPY package.json pnpm-lock.yaml* ./
+RUN corepack enable && corepack prepare pnpm@latest --activate
+RUN pnpm install --prod --frozen-lockfile
+
+# Copy build output from builder
+COPY --from=builder /usr/src/app/dist ./dist
+
 EXPOSE 3000
-CMD ["pnpm", "run", "start:prod"]
+CMD ["node", "dist/main"]

@@ -1,7 +1,7 @@
 import ReviewWriteItem from "@/components/custom/ReviewWriteItem";
 
 export default function HomePage() {
-  // 이주의 베스트 리뷰 데이터
+  // 베스트 리뷰 데이터
   const bestReview = {
     author: {
       name: "김개발",
@@ -30,7 +30,7 @@ export default function HomePage() {
         {/* 이주의 베스트 섹션 */}
         <div>
           <div className="flex items-center gap-2 mb-3">
-            <h2 className="text-xl font-bold">이주의 베스트</h2>
+            <h2 className="text-xl font-bold">베스트 리뷰 요청</h2>
             <span className="text-2xl">⭐</span>
           </div>
 

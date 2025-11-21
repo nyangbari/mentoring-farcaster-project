@@ -14,6 +14,7 @@ export class ReviewRequestService {
   async create(dto: CreateReviewRequestDto) {
     const ent = new ReviewRequest();
     ent.user_id = dto.user_id;
+    ent.wallet_address = dto.wallet_address;  // 추가
     ent.title = dto.title;
     ent.category = dto.category;
     ent.description = dto.description;

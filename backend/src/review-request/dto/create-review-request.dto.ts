@@ -7,6 +7,15 @@ export class CreateReviewRequestDto {
   @IsNotEmpty()
   user_id: string;
 
+  // 추가: 지갑 주소
+  @ApiProperty({ 
+    example: '0x405ff2f6d7b9bc2ad28eee8edaca6ab045c63825', 
+    description: 'Wallet address for token deposit' 
+  })
+  @IsString()
+  @IsNotEmpty()
+  wallet_address: string;
+
   @ApiProperty({ example: 'Code Review for PR#42', description: 'Title' })
   @IsString()
   @IsNotEmpty()

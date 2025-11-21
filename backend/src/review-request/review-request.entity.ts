@@ -9,6 +9,10 @@ export class ReviewRequest {
   @Column()
   user_id: string;
 
+  // 추가: 지갑 주소
+  @Column()
+  wallet_address: string;
+
   @Column()
   title: string;
 

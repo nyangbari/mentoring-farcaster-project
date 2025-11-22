@@ -5,6 +5,9 @@ WORKDIR /usr/src/app
 # Copy package manifest and lockfile (if present)
 COPY package.json pnpm-lock.yaml* ./
 
+# .npmrc 복사 (있다면)
+COPY .npmrc* ./
+
 # Enable corepack and prepare pnpm, fall back to installing pnpm globally if corepack not available
 RUN corepack enable || true && corepack prepare pnpm@latest --activate || npm i -g pnpm
 

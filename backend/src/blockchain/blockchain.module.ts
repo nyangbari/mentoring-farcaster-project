@@ -5,5 +5,6 @@ import { TokenController } from './token.controller';
 @Module({
   controllers: [TokenController],
   providers: [TokenService],
+  exports: [TokenService],
 })
 export class BlockchainModule {}

@@ -5,11 +5,19 @@ import { ValidationPipe } from '@nestjs/common';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  app.useGlobalPipes(new ValidationPipe({ whitelist: true }));
-  // Swagger ¼³Á¤
+
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: true,  // ì¶”ê°€
+      transform: true,              // ì¶”ê°€
+    })
+  );
+
+  // Swagger ï¿½ï¿½ï¿½ï¿½
   const config = new DocumentBuilder()
     .setTitle('NestJS API')
-    .setDescription('NestJS + PostgreSQL + TypeORM + Swagger API ¹®¼­')
+    .setDescription('NestJS + PostgreSQL + TypeORM + Swagger API ï¿½ï¿½ï¿½ï¿½')
     .setVersion('1.0')
     .build();
 

@@ -1,94 +1,83 @@
-import { Controller, Post, Get, Body, Query } from '@nestjs/common'
-import { ReviewService } from './review.service'
+import { Controller, Post, Get, Body, Query } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiQuery, ApiResponse } from '@nestjs/swagger';
+import { ReviewService } from './review.service';
+import { DepositDto } from './dto/deposit.dto';
+import { RewardDto } from './dto/reward.dto';
+import { DistributeDto } from './dto/distribute.dto';
+import { CancelDto } from './dto/cancel.dto';
 
+@ApiTags('Review')
 @Controller('review')
 export class ReviewController {
   constructor(private readonly review: ReviewService) {}
 
-  /**
-   * 리뷰 요청 시 토큰 예치
-   * POST /review/deposit
-   * Body: { requesterAddress: string, amount: number }
-   */
   @Post('deposit')
-  async deposit(
-    @Body() body: { requesterAddress: string; amount: number }
-  ) {
+  @ApiOperation({ summary: '토큰 예치' })
+  @ApiResponse({ status: 200, description: '예치 성공' })
+  @ApiResponse({ status: 400, description: '잔액 부족' })
+  async deposit(@Body() dto: DepositDto) {
     const result = await this.review.depositTokens(
-      body.requesterAddress,
-      body.amount
-    )
-    return result
+      dto.requesterAddress,
+      dto.amount
+    );
+    return result;
   }
 
-  /**
-   * 단일 리뷰어에게 보상 지급
-   * POST /review/reward
-   * Body: { requesterAddress: string, reviewerAddress: string, amount: number }
-   */
   @Post('reward')
-  async reward(
-    @Body()
-    body: {
-      requesterAddress: string
-      reviewerAddress: string
-      amount: number
-    }
-  ) {
+  @ApiOperation({ summary: '리뷰어에게 보상 지급' })
+  @ApiResponse({ status: 200, description: '보상 지급 성공' })
+  @ApiResponse({ status: 400, description: '예치금 부족' })
+  async reward(@Body() dto: RewardDto) {
     const result = await this.review.sendRewardToReviewer(
-      body.requesterAddress,
-      body.reviewerAddress,
-      body.amount
-    )
-    return result
+      dto.requesterAddress,
+      dto.reviewerAddress,
+      dto.amount
+    );
+    return result;
   }
 
-  /**
-   * 여러 리뷰어에게 토큰 분배
-   * POST /review/distribute
-   * Body: { 
-   *   requesterAddress: string, 
-   *   distributions: [{ reviewerAddress: string, amount: number }]
-   * }
-   */
   @Post('distribute')
-  async distribute(
-    @Body()
-    body: {
-      requesterAddress: string
-      distributions: Array<{ reviewerAddress: string; amount: number }>
-    }
-  ) {
+  @ApiOperation({ summary: '여러 리뷰어에게 일괄 분배' })
+  async distribute(@Body() dto: DistributeDto) {
     const result = await this.review.distributeRewards(
-      body.requesterAddress,
-      body.distributions
-    )
-    return result
+      dto.requesterAddress,
+      dto.distributions
+    );
+    return result;
   }
 
-  /**
-   * 예치 취소 (리뷰 요청 취소)
-   * POST /review/cancel
-   * Body: { requesterAddress: string, amount?: number }
-   */
   @Post('cancel')
-  async cancel(
-    @Body() body: { requesterAddress: string; amount?: number }
-  ) {
+  @ApiOperation({ summary: '예치 취소' })
+  async cancel(@Body() dto: CancelDto) {
     const result = await this.review.cancelDeposit(
-      body.requesterAddress,
-      body.amount
-    )
-    return result
+      dto.requesterAddress,
+      dto.amount
+    );
+    return result;
   }
 
-  /**
-   * 예치 잔액 조회
-   * GET /review/balance?address=0x...
-   */
   @Get('balance')
+  @ApiOperation({ summary: '예치 잔액 조회' })
+  @ApiQuery({ 
+    name: 'address', 
+    required: true, 
+    example: '0x6b4f81F0391A2c977d78A3156390DA001D3baBa7',
+    description: '지갑 주소'
+  })
+  @ApiResponse({ 
+    status: 200, 
+    description: '잔액 조회 성공',
+    schema: {
+      type: 'object',
+      properties: {
+        requesterAddress: { type: 'string' },
+        vaultBalance: { type: 'number' },
+        onchainBalance: { type: 'number' }
+      }
+    }
+  })
   async getBalance(@Query('address') address: string) {
-    const result = await this.review.getDepositBalance(address)
-    return result
+    const result = await this.review.getDepositBalance(address);
+    return result;
   }
 }

@@ -1,4 +1,4 @@
-import hre from "hardhat";
+const hre = require("hardhat");
 
 async function main() {
   console.log("\n=== 🚀 MyToken 배포 시작 ===\n");
@@ -21,7 +21,9 @@ async function main() {
   console.log("Owner:", await token.owner());
   console.log("Token Name:", await token.name());
   console.log("Token Symbol:", await token.symbol());
-  console.log("Total Supply:", hre.ethers.formatEther(await token.totalSupply()), "MTR");
+  
+  const totalSupply = await token.totalSupply();
+  console.log("Total Supply:", hre.ethers.formatEther(totalSupply), "MTR");
   
   console.log("\n=== 📝 Backend .env에 추가 ===\n");
   console.log(`TOKEN_ADDRESS=${tokenAddress}`);

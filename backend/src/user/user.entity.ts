@@ -14,6 +14,9 @@ export class User {
   @Column({ nullable: true, unique: true })
   username: string;
 
+  @Column({ type: 'varchar', length: 512, nullable: true })
+  user_profile_url: string | null;
+
   @Column({ nullable: true })  // nullable: true 추가
   password?: string;  // ? 추가
 

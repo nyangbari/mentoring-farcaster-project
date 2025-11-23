@@ -6,6 +6,7 @@ import { VaultService } from '../vault/vault.service'
 import { Review } from './review.entity'
 import { ReviewRequest } from '../review-request/review-request.entity'
 import { CreateReviewDto } from './dto/create-review.dto'
+import { User } from '../user/user.entity'
 
 @Injectable()
 export class ReviewService {
@@ -17,7 +18,9 @@ export class ReviewService {
     @InjectRepository(Review)
     private readonly reviewRepo: Repository<Review>,
     @InjectRepository(ReviewRequest)
-    private readonly reviewRequestRepo: Repository<ReviewRequest>
+    private readonly reviewRequestRepo: Repository<ReviewRequest>,
+    @InjectRepository(User)
+    private readonly userRepo: Repository<User>
   ) {}
 
   private normalizePagination(page?: number, take = this.DEFAULT_PAGE_SIZE) {
@@ -224,13 +227,24 @@ export class ReviewService {
       throw new NotFoundException(`Review request ${dto.review_request_id} not found`)
     }
 
+    const reviewer = await this.userRepo.findOne({ where: { id: dto.reviewer_user_id } })
+    if (!reviewer) {
+      throw new NotFoundException(`Reviewer (user_id=${dto.reviewer_user_id}) not found`)
+    }
+
+    const walletAddress = reviewer.wallet_address ?? dto.reviewer_wallet_addr
+
+    if (!walletAddress) {
+      throw new BadRequestException('리뷰어 지갑 주소를 확인할 수 없습니다')
+    }
+
     const review = this.reviewRepo.create({
       review_request_id: dto.review_request_id,
       review_hash: dto.review_hash,
-      reviewer_user_id: dto.reviewer_user_id,
-      reviewer_user_name: dto.reviewer_user_name,
-      reviewer_user_profile_url: dto.reviewer_user_profile_url,
-      reviewer_wallet_addr: dto.reviewer_wallet_addr,
+      reviewer_user_id: reviewer.id,
+      reviewer_user_name: reviewer.username ?? dto.reviewer_user_name ?? null,
+      reviewer_user_profile_url: reviewer.user_profile_url ?? dto.reviewer_user_profile_url ?? null,
+      reviewer_wallet_addr: walletAddress,
       rating: dto.rating,
       summary: dto.summary,
       review_request: reviewRequest,

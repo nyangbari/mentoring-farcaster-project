@@ -3,7 +3,6 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule } from '@nestjs/config';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { UserService } from './user/user.service';
 import { UserModule } from './user/user.module';
 import { AuthModule } from './auth/auth.module';
 import { ReviewRequestModule } from './review-request/review-request.module';
@@ -35,6 +34,6 @@ import { BlockchainModule } from './blockchain/blockchain.module';
     BlockchainModule,
   ],
   controllers: [AppController],
-  providers: [AppService, UserService],
+  providers: [AppService],
 })
 export class AppModule {}

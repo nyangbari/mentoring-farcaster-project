@@ -19,31 +19,36 @@ export class ReviewService {
    * @returns 업데이트된 Vault 정보
    */
   async depositTokens(requesterAddress: string, amount: number) {
-    // Step 1: 온체인에서 실제 토큰 보유량 확인
+    // Step 1: 사용자 토큰 보유량 확인
     const balance = await this.token.getTokenBalance(requesterAddress)
     
-    // Step 2: 예치하려는 금액이 보유량보다 많으면 에러
     if (balance < amount) {
       throw new BadRequestException(
         `잔액 부족: 보유 ${balance} 토큰, 요청 ${amount} 토큰`
       )
     }
 
-    // Step 3: 최소 예치 금액 검증 (예: 최소 1토큰)
-    if (amount < 1) {
-      throw new BadRequestException('최소 1 토큰 이상 예치해야 합니다')
+    // Step 2: approve 확인
+    const allowance = await this.token.getAllowance(requesterAddress)
+    
+    if (allowance < amount) {
+      throw new BadRequestException(
+        `승인 필요: ${amount} 토큰에 대한 approve() 호출 필요. 현재 승인: ${allowance}`
+      )
     }
 
-    // Step 4: VaultService에 예치 정보 저장
-    // 이 시점에서는 실제 토큰 전송은 하지 않고, 
-    // "이 사용자가 이만큼 예치했다"는 기록만 남김
+    // Step 3: 사용자 → 서버로 토큰 전송
+    const receipt = await this.token.transferToServer(requesterAddress, amount)
+
+    // Step 4: Vault에 기록
     const updated = await this.vault.deposit(requesterAddress, amount)
 
     return {
       requesterAddress,
       depositedAmount: amount,
-      currentBalance: balance,
-      vault: updated
+      currentBalance: balance - amount,
+      vault: updated,
+      txHash: receipt.transactionHash
     }
   }
 
@@ -74,8 +79,8 @@ export class ReviewService {
     // Step 2: Vault에서 예치금 차감
     await this.vault.withdraw(requesterAddress, amount)
 
-    // Step 3: 온체인에서 리뷰어에게 토큰 발행
-    const receipt = await this.token.sendTokens(reviewerAddress, amount)
+    // Step 3: 서버 지갑 → 리뷰어에게 토큰 전송
+    const receipt = await this.token.transferFromServer(reviewerAddress, amount)
 
     return {
       requesterAddress,

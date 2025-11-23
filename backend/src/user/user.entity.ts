@@ -5,8 +5,8 @@ export class User {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ unique: true })
-  wallet_address: string;  // 지갑 주소 (고유값)
+  @Column({ type: 'varchar', length: 255, unique: true, nullable: true })
+  wallet_address: string | null;  // 지갑 주소 (고유값)
 
   @Column({ default: false })
   welcome_bonus_claimed: boolean;

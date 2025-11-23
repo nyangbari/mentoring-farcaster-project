@@ -11,7 +11,7 @@ import {
   BadRequestException,
   NotFoundException,
 } from '@nestjs/common';
-import { ApiTags, ApiResponse, ApiBody, ApiOkResponse, ApiParam } from '@nestjs/swagger';
+import { ApiTags, ApiResponse, ApiBody, ApiOkResponse, ApiParam, ApiQuery } from '@nestjs/swagger';
 import { ReviewRequestService } from './review-request.service';
 import { CreateReviewRequestDto } from './dto/create-review-request.dto';
 import { TokenService } from '../blockchain/token.service';
@@ -93,6 +93,7 @@ export class ReviewRequestController {
   }
 
   @Get('my-review-request')
+  @ApiQuery({ name: 'user_id', required: true, type: String })
   async getMyReviewRequests(@Query() query: MyReviewRequestQueryDto) {
     const result = await this.service.findByUser(query.user_id, query.page, 10);
     return {

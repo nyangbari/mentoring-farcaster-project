@@ -1,14 +1,7 @@
-import { IsNotEmpty, IsOptional, IsString, IsInt, Min } from 'class-validator';
-import { Type } from 'class-transformer';
+import { IsNotEmpty, IsString } from 'class-validator';
 
 export class GetReviewsQueryDto {
   @IsString()
   @IsNotEmpty()
-  user_id: string;
-
-  @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  @Min(1)
-  page = 1;
+  review_hash: string;
 }

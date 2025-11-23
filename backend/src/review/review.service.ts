@@ -206,25 +206,15 @@ export class ReviewService {
     }
   }
 
-  async getReviewsForRequester(userId: string, page = 1, take = this.DEFAULT_PAGE_SIZE) {
-    const { page: p, take: t, skip } = this.normalizePagination(page, take)
-
-    const qb = this.reviewRepo
-      .createQueryBuilder('review')
-      .innerJoin('review.review_request', 'request')
-      .where('request.user_id = :userId', { userId })
-      .orderBy('review.createdAt', 'DESC')
-      .skip(skip)
-      .take(t)
-
-    const [items, total] = await qb.getManyAndCount()
+  async getReviewsByHash(reviewHash: string) {
+    const items = await this.reviewRepo.find({
+      where: { review_hash: reviewHash },
+      order: { createdAt: 'DESC' },
+    })
 
     return {
       items,
-      total,
-      page: p,
-      take: t,
-      totalPages: Math.ceil(total / t) || 0,
+      total: items.length,
     }
   }
 
@@ -235,7 +225,6 @@ export class ReviewService {
     }
 
     const review = this.reviewRepo.create({
-      id: dto.review_id,
       review_request_id: dto.review_request_id,
       review_hash: dto.review_hash,
       reviewer_user_id: dto.reviewer_user_id,

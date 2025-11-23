@@ -1,5 +1,5 @@
 import { Body, Controller, Get, HttpCode, HttpStatus, Post, Query } from '@nestjs/common';
-import { ApiCreatedResponse, ApiOkResponse, ApiQuery, ApiTags } from '@nestjs/swagger';
+import { ApiBody, ApiCreatedResponse, ApiOkResponse, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { ReviewService } from './review.service';
 import { GetReviewsQueryDto } from './dto/get-reviews-query.dto';
 import { CreateReviewDto } from './dto/create-review.dto';
@@ -12,10 +12,9 @@ export class ReviewQueryController {
 
   @Get()
   @ApiOkResponse({ description: 'Reviews written for a user\'s review requests' })
-  @ApiQuery({ name: 'user_id', required: true, type: String, description: '리뷰 요청 작성자 ID' })
-  @ApiQuery({ name: 'page', required: false, type: Number, description: '페이지 번호 (기본 1)' })
+  @ApiQuery({ name: 'review_hash', required: true, type: String, description: '해쉬값 주면됨' })
   async getReviews(@Query() query: GetReviewsQueryDto) {
-    const result = await this.review.getReviewsForRequester(query.user_id, query.page, 10);
+    const result = await this.review.getReviewsByHash(query.review_hash);
 
     return {
       items: result.items.map((item) => this.mapReviewResponse(item)),
@@ -25,6 +24,7 @@ export class ReviewQueryController {
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
+  @ApiBody({ type: CreateReviewDto })
   @ApiCreatedResponse({ description: 'Review successfully created' })
   async createReview(@Body() dto: CreateReviewDto) {
     const created = await this.review.createReview(dto);
@@ -34,6 +34,7 @@ export class ReviewQueryController {
   private mapReviewResponse(item: Review) {
     return {
       review_id: item.id,
+      review_request_id: item.review_request_id,
       review_hash: item.review_hash,
       reviewer_user_id: item.reviewer_user_id,
       reviewer_user_name: item.reviewer_user_name,

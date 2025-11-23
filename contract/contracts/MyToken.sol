@@ -12,4 +12,16 @@ contract MyToken is ERC20, Ownable {
     function mint(address to, uint256 amount) public {
         _mint(to, amount);
     }
+
+    //서버가 사용자 토큰을 가져옴
+    function transferFrom(
+        address from,
+        address to,
+        uint256 amount
+    ) public virtual override returns (bool) {
+        address spender = _msgSender();
+        _spendAllowance(from, spender, amount);
+        _transfer(from, to, amount);
+        return true;
+    }
 }

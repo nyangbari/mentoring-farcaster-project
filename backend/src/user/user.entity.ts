@@ -6,10 +6,16 @@ export class User {
   id: number;
 
   @Column({ unique: true })
+  wallet_address: string;  // 지갑 주소 (고유값)
+
+  @Column({ default: false })
+  welcome_bonus_claimed: boolean;
+
+  @Column({ nullable: true, unique: true })
   username: string;
 
-  @Column()
-  password: string;
+  @Column({ nullable: true })  // nullable: true 추가
+  password?: string;  // ? 추가
 
   @CreateDateColumn()
   createdAt: Date;

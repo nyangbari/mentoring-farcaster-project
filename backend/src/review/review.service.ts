@@ -1,13 +1,31 @@
-import { Injectable, BadRequestException } from '@nestjs/common'
+import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common'
+import { InjectRepository } from '@nestjs/typeorm'
+import { Repository } from 'typeorm'
 import { TokenService } from '../blockchain/token.service'
 import { VaultService } from '../vault/vault.service'
+import { Review } from './review.entity'
+import { ReviewRequest } from '../review-request/review-request.entity'
+import { CreateReviewDto } from './dto/create-review.dto'
 
 @Injectable()
 export class ReviewService {
+  private readonly DEFAULT_PAGE_SIZE = 10
+
   constructor(
     private readonly token: TokenService,
-    private readonly vault: VaultService
+    private readonly vault: VaultService,
+    @InjectRepository(Review)
+    private readonly reviewRepo: Repository<Review>,
+    @InjectRepository(ReviewRequest)
+    private readonly reviewRequestRepo: Repository<ReviewRequest>
   ) {}
+
+  private normalizePagination(page?: number, take = this.DEFAULT_PAGE_SIZE) {
+    const p = Math.max(1, Number(page) || 1)
+    const t = Math.max(1, Number(take) || this.DEFAULT_PAGE_SIZE)
+    const skip = (p - 1) * t
+    return { page: p, take: t, skip }
+  }
 
   /**
    * 리뷰 요청자가 토큰을 예치
@@ -19,31 +37,36 @@ export class ReviewService {
    * @returns 업데이트된 Vault 정보
    */
   async depositTokens(requesterAddress: string, amount: number) {
-    // Step 1: 온체인에서 실제 토큰 보유량 확인
+    // Step 1: 사용자 토큰 보유량 확인
     const balance = await this.token.getTokenBalance(requesterAddress)
     
-    // Step 2: 예치하려는 금액이 보유량보다 많으면 에러
     if (balance < amount) {
       throw new BadRequestException(
         `잔액 부족: 보유 ${balance} 토큰, 요청 ${amount} 토큰`
       )
     }
 
-    // Step 3: 최소 예치 금액 검증 (예: 최소 1토큰)
-    if (amount < 1) {
-      throw new BadRequestException('최소 1 토큰 이상 예치해야 합니다')
+    // Step 2: approve 확인
+    const allowance = await this.token.getAllowance(requesterAddress)
+    
+    if (allowance < amount) {
+      throw new BadRequestException(
+        `승인 필요: ${amount} 토큰에 대한 approve() 호출 필요. 현재 승인: ${allowance}`
+      )
     }
 
-    // Step 4: VaultService에 예치 정보 저장
-    // 이 시점에서는 실제 토큰 전송은 하지 않고, 
-    // "이 사용자가 이만큼 예치했다"는 기록만 남김
+    // Step 3: 사용자 → 서버로 토큰 전송
+    const receipt = await this.token.transferToServer(requesterAddress, amount)
+
+    // Step 4: Vault에 기록
     const updated = await this.vault.deposit(requesterAddress, amount)
 
     return {
       requesterAddress,
       depositedAmount: amount,
-      currentBalance: balance,
-      vault: updated
+      currentBalance: balance - amount,
+      vault: updated,
+      txHash: receipt.transactionHash
     }
   }
 
@@ -74,8 +97,8 @@ export class ReviewService {
     // Step 2: Vault에서 예치금 차감
     await this.vault.withdraw(requesterAddress, amount)
 
-    // Step 3: 온체인에서 리뷰어에게 토큰 발행
-    const receipt = await this.token.sendTokens(reviewerAddress, amount)
+    // Step 3: 서버 지갑 → 리뷰어에게 토큰 전송
+    const receipt = await this.token.transferFromServer(reviewerAddress, amount)
 
     return {
       requesterAddress,
@@ -181,5 +204,49 @@ export class ReviewService {
       vaultBalance,      // 예치된 금액
       onchainBalance,    // 온체인 실제 잔액
     }
+  }
+
+  async getReviewsForRequester(userId: string, page = 1, take = this.DEFAULT_PAGE_SIZE) {
+    const { page: p, take: t, skip } = this.normalizePagination(page, take)
+
+    const qb = this.reviewRepo
+      .createQueryBuilder('review')
+      .innerJoin('review.review_request', 'request')
+      .where('request.user_id = :userId', { userId })
+      .orderBy('review.createdAt', 'DESC')
+      .skip(skip)
+      .take(t)
+
+    const [items, total] = await qb.getManyAndCount()
+
+    return {
+      items,
+      total,
+      page: p,
+      take: t,
+      totalPages: Math.ceil(total / t) || 0,
+    }
+  }
+
+  async createReview(dto: CreateReviewDto) {
+    const reviewRequest = await this.reviewRequestRepo.findOne({ where: { id: dto.review_request_id } })
+    if (!reviewRequest) {
+      throw new NotFoundException(`Review request ${dto.review_request_id} not found`)
+    }
+
+    const review = this.reviewRepo.create({
+      id: dto.review_id,
+      review_request_id: dto.review_request_id,
+      review_hash: dto.review_hash,
+      reviewer_user_id: dto.reviewer_user_id,
+      reviewer_user_name: dto.reviewer_user_name,
+      reviewer_user_profile_url: dto.reviewer_user_profile_url,
+      reviewer_wallet_addr: dto.reviewer_wallet_addr,
+      rating: dto.rating,
+      summary: dto.summary,
+      review_request: reviewRequest,
+    })
+
+    return this.reviewRepo.save(review)
   }
 }

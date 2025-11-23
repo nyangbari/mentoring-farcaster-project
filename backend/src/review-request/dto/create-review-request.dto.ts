@@ -10,16 +10,27 @@ export class CreateReviewRequestDto {
   // 추가: 지갑 주소
   @ApiProperty({ 
     example: '0x405ff2f6d7b9bc2ad28eee8edaca6ab045c63825', 
-    description: 'Wallet address for token deposit' 
+    description: 'Wallet address for token deposit',
+    required: false,
   })
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
-  wallet_address: string;
+  wallet_address?: string;
 
   @ApiProperty({ example: 'Code Review for PR#42', description: 'Title' })
   @IsString()
   @IsNotEmpty()
   title: string;
+
+  @ApiProperty({ example: 'Jane Doe', description: 'User display name' })
+  @IsString()
+  @IsNotEmpty()
+  user_name: string;
+
+  @ApiProperty({ example: 'https://example.com/avatar.png', description: 'Profile image URL' })
+  @IsString()
+  @IsNotEmpty()
+  user_profile_url: string;
 
   @ApiProperty({ example: 'backend', description: 'Category' })
   @IsString()

@@ -86,13 +86,20 @@ export class UserService {
    * 사용자 정보 조회
    */
   async getUserInfo(wallet_address: string) {
-    const user = await this.userRepository.findOne({ where: { wallet_address } });
-    
+    let user = await this.userRepository.findOne({ where: { wallet_address } });
+    let createdGuest = false;
+
     if (!user) {
-      return {
-        exists: false,
+      const guestUsername = this.generateGuestUsername(wallet_address);
+      user = this.userRepository.create({
         wallet_address,
-      };
+        username: guestUsername,
+        welcome_bonus_claimed: false,
+        user_profile_url: null,
+      });
+
+      user = await this.userRepository.save(user);
+      createdGuest = true;
     }
 
     const tokenBalance = await this.tokenService.getTokenBalance(wallet_address);
@@ -100,9 +107,16 @@ export class UserService {
     return {
       exists: true,
       wallet_address: user.wallet_address,
+      username: user.username,
       welcome_bonus_claimed: user.welcome_bonus_claimed,
       created_at: user.createdAt,
       token_balance: tokenBalance,
+      is_guest: createdGuest,
     };
+  }
+
+  private generateGuestUsername(wallet_address: string) {
+    const suffix = wallet_address?.slice(-6)?.toLowerCase() ?? 'guest';
+    return `guest_${suffix}_${Date.now()}`;
   }
 }

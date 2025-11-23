@@ -22,7 +22,7 @@ export class ReviewQueryController {
     };
   }
 
-  @Post()
+  @Post('create-review')
   @HttpCode(HttpStatus.CREATED)
   @ApiBody({ type: CreateReviewDto })
   @ApiCreatedResponse({ description: 'Review successfully created' })

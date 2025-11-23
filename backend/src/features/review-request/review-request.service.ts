@@ -2,7 +2,19 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ReviewRequest } from './review-request.entity';
-import { CreateReviewRequestDto } from './dto/create-review-request.dto';
+import { CreateReviewRequestDto } from '../create-review-request/dto/create-review-request.dto';
+
+export interface ReviewRequestResponseDto {
+  id: number;
+  user_id: string;
+  user_name: string | null;
+  user_profile_url: string | null;
+  title: string;
+  category: string;
+  description: string;
+  reward: number | null;
+  deadline: string | null;
+}
 
 @Injectable()
 export class ReviewRequestService {
@@ -126,6 +138,20 @@ export class ReviewRequestService {
     return {
       entity,
       numReviews: Number(numReviewsRaw ?? 0),
+    };
+  }
+
+  toResponseDto(it: ReviewRequest): ReviewRequestResponseDto {
+    return {
+      id: it.id,
+      user_id: it.user_id,
+      user_name: it.user_name,
+      user_profile_url: it.user_profile_url,
+      title: it.title,
+      category: it.category,
+      description: it.description,
+      reward: it.reward === null || it.reward === undefined ? null : Number(it.reward),
+      deadline: it.deadline ? new Date(it.deadline).toISOString() : null,
     };
   }
 }

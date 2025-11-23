@@ -1,12 +1,12 @@
 import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
-import { TokenService } from '../blockchain/token.service'
-import { VaultService } from '../vault/vault.service'
+import { TokenService } from '../../blockchain/token.service'
+import { VaultService } from '../../vault/vault.service'
 import { Review } from './review.entity'
 import { ReviewRequest } from '../review-request/review-request.entity'
 import { CreateReviewDto } from './dto/create-review.dto'
-import { User } from '../user/user.entity'
+import { User } from '../../user/user.entity'
 
 @Injectable()
 export class ReviewService {

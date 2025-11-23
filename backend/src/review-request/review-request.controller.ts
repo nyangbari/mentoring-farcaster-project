@@ -119,6 +119,17 @@ export class ReviewRequestController {
       num_of_reviews: popular.numReviews,
     };
   }
+      // ⭐ 추가됨: 파캐스터 댓글 조회용 API
+@Get('review-request/cast')
+@ApiQuery({ name: 'fid', required: true, type: String })
+@ApiQuery({ name: 'hash', required: true, type: String })
+async getCast(
+  @Query('fid') fid: string,
+  @Query('hash') hash: string,
+) {
+  return this.service.getCast(Number(fid), hash);
+}
+
 
   private mapReviewRequest(it: ReviewRequest) {
     return {

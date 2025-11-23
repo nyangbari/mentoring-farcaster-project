@@ -10,7 +10,7 @@ async function bootstrap() {
     new ValidationPipe({
       whitelist: true,
       forbidNonWhitelisted: true,  // 추가
-      transform: true,              // 추가
+      transform: false,              // 추가
     })
   );
 

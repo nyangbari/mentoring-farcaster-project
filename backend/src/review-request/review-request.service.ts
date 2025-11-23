@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ReviewRequest } from './review-request.entity';
 import { CreateReviewRequestDto } from './dto/create-review-request.dto';
+import axios from 'axios';  //추가 
 
 @Injectable()
 export class ReviewRequestService {
@@ -128,4 +129,18 @@ export class ReviewRequestService {
       numReviews: Number(numReviewsRaw ?? 0),
     };
   }
+  // ⭐ 추가됨
+async getReplies(fid: number, hash: string) {
+  const url = `http://210.109.54.183:3381/v1/replies?fid=${fid}&hash=${hash}`;
+  const res = await axios.get(url);
+  return res.data;
+}
+
+async getCast(fid: number, hash: string) {
+  const url = `http://210.109.54.183:3381/v1/castById?fid=${fid}&hash=${hash}`;
+  const res = await axios.get(url);
+  return res.data;
+}
+
+
 }

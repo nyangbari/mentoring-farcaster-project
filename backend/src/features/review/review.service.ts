@@ -238,11 +238,11 @@ export class ReviewService {
       throw new BadRequestException('리뷰어 지갑 주소를 확인할 수 없습니다')
     }
 
-    const review = this.reviewRepo.create({
+      const review = this.reviewRepo.create({
       review_request_id: dto.review_request_id,
       review_hash: dto.review_hash,
       reviewer_user_id: reviewer.id,
-      reviewer_user_name: reviewer.username ?? dto.reviewer_user_name ?? null,
+        reviewer_user_name: reviewer.user_name ?? dto.reviewer_user_name ?? null,
       reviewer_user_profile_url: reviewer.user_profile_url ?? dto.reviewer_user_profile_url ?? null,
       reviewer_wallet_addr: walletAddress,
       rating: dto.rating,

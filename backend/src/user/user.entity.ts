@@ -12,7 +12,7 @@ export class User {
   welcome_bonus_claimed: boolean;
 
   @Column({ nullable: true, unique: true })
-  username: string;
+  user_name: string;
 
   @Column({ type: 'varchar', length: 512, nullable: true })
   user_profile_url: string | null;

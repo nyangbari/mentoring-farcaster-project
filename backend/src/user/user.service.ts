@@ -90,10 +90,10 @@ export class UserService {
     let createdGuest = false;
 
     if (!user) {
-      const guestUsername = this.generateGuestUsername(wallet_address);
+      const guestName = this.generateGuestUsername(wallet_address);
       user = this.userRepository.create({
         wallet_address,
-        username: guestUsername,
+        user_name: guestName,
         welcome_bonus_claimed: false,
         user_profile_url: null,
       });
@@ -107,7 +107,8 @@ export class UserService {
     return {
       exists: true,
       wallet_address: user.wallet_address,
-      username: user.username,
+      user_name: user.user_name,
+      username: user.user_name,
       welcome_bonus_claimed: user.welcome_bonus_claimed,
       created_at: user.createdAt,
       token_balance: tokenBalance,

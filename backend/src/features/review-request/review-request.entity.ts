@@ -13,8 +13,7 @@ export class ReviewRequest {
   @PrimaryGeneratedColumn()
   id: number;
 
-  // keep as string to accept various client id formats
-  @Column()
+  @Column({ name: 'f_id' })
   user_id: string;
 
   // 추가: 지갑 주소

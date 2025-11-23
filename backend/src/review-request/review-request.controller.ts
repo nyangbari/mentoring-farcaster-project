@@ -65,6 +65,7 @@ export class ReviewRequestController {
 
   @Get('review-request')
   @ApiOkResponse({ description: 'Paged list of review requests' })
+  @ApiQuery({ name: 'page', required: false, type: Number, description: '페이지 번호 (기본 1)' })
   async findAll(@Query('page') page?: string) {
     const result = await this.service.findPaged(Number(page ?? '1'), 10);
 
@@ -84,6 +85,8 @@ export class ReviewRequestController {
   }
 
   @Get('review-request-by-category')
+  @ApiQuery({ name: 'category', required: true, type: String, description: '카테고리명' })
+  @ApiQuery({ name: 'page', required: false, type: Number, description: '페이지 번호 (기본 1)' })
   async searchByCategory(@Query() query: SearchReviewRequestQueryDto) {
     const result = await this.service.searchByCategory(query.page, 10, query.category);
     return {
@@ -93,7 +96,8 @@ export class ReviewRequestController {
   }
 
   @Get('my-review-request')
-  @ApiQuery({ name: 'user_id', required: true, type: String })
+  @ApiQuery({ name: 'user_id', required: true, type: String, description: '작성자 ID' })
+  @ApiQuery({ name: 'page', required: false, type: Number, description: '페이지 번호 (기본 1)' })
   async getMyReviewRequests(@Query() query: MyReviewRequestQueryDto) {
     const result = await this.service.findByUser(query.user_id, query.page, 10);
     return {

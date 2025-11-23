@@ -1,5 +1,5 @@
 import { Body, Controller, Get, HttpCode, HttpStatus, Post, Query } from '@nestjs/common';
-import { ApiCreatedResponse, ApiOkResponse, ApiTags } from '@nestjs/swagger';
+import { ApiCreatedResponse, ApiOkResponse, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { ReviewService } from './review.service';
 import { GetReviewsQueryDto } from './dto/get-reviews-query.dto';
 import { CreateReviewDto } from './dto/create-review.dto';
@@ -12,6 +12,8 @@ export class ReviewQueryController {
 
   @Get()
   @ApiOkResponse({ description: 'Reviews written for a user\'s review requests' })
+  @ApiQuery({ name: 'user_id', required: true, type: String, description: '리뷰 요청 작성자 ID' })
+  @ApiQuery({ name: 'page', required: false, type: Number, description: '페이지 번호 (기본 1)' })
   async getReviews(@Query() query: GetReviewsQueryDto) {
     const result = await this.review.getReviewsForRequester(query.user_id, query.page, 10);
 

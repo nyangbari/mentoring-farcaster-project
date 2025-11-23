@@ -1,13 +1,31 @@
-import { Injectable, BadRequestException } from '@nestjs/common'
+import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common'
+import { InjectRepository } from '@nestjs/typeorm'
+import { Repository } from 'typeorm'
 import { TokenService } from '../blockchain/token.service'
 import { VaultService } from '../vault/vault.service'
+import { Review } from './review.entity'
+import { ReviewRequest } from '../review-request/review-request.entity'
+import { CreateReviewDto } from './dto/create-review.dto'
 
 @Injectable()
 export class ReviewService {
+  private readonly DEFAULT_PAGE_SIZE = 10
+
   constructor(
     private readonly token: TokenService,
-    private readonly vault: VaultService
+    private readonly vault: VaultService,
+    @InjectRepository(Review)
+    private readonly reviewRepo: Repository<Review>,
+    @InjectRepository(ReviewRequest)
+    private readonly reviewRequestRepo: Repository<ReviewRequest>
   ) {}
+
+  private normalizePagination(page?: number, take = this.DEFAULT_PAGE_SIZE) {
+    const p = Math.max(1, Number(page) || 1)
+    const t = Math.max(1, Number(take) || this.DEFAULT_PAGE_SIZE)
+    const skip = (p - 1) * t
+    return { page: p, take: t, skip }
+  }
 
   /**
    * 리뷰 요청자가 토큰을 예치
@@ -181,5 +199,49 @@ export class ReviewService {
       vaultBalance,      // 예치된 금액
       onchainBalance,    // 온체인 실제 잔액
     }
+  }
+
+  async getReviewsForRequester(userId: string, page = 1, take = this.DEFAULT_PAGE_SIZE) {
+    const { page: p, take: t, skip } = this.normalizePagination(page, take)
+
+    const qb = this.reviewRepo
+      .createQueryBuilder('review')
+      .innerJoin('review.review_request', 'request')
+      .where('request.user_id = :userId', { userId })
+      .orderBy('review.createdAt', 'DESC')
+      .skip(skip)
+      .take(t)
+
+    const [items, total] = await qb.getManyAndCount()
+
+    return {
+      items,
+      total,
+      page: p,
+      take: t,
+      totalPages: Math.ceil(total / t) || 0,
+    }
+  }
+
+  async createReview(dto: CreateReviewDto) {
+    const reviewRequest = await this.reviewRequestRepo.findOne({ where: { id: dto.review_request_id } })
+    if (!reviewRequest) {
+      throw new NotFoundException(`Review request ${dto.review_request_id} not found`)
+    }
+
+    const review = this.reviewRepo.create({
+      id: dto.review_id,
+      review_request_id: dto.review_request_id,
+      review_hash: dto.review_hash,
+      reviewer_user_id: dto.reviewer_user_id,
+      reviewer_user_name: dto.reviewer_user_name,
+      reviewer_user_profile_url: dto.reviewer_user_profile_url,
+      reviewer_wallet_addr: dto.reviewer_wallet_addr,
+      rating: dto.rating,
+      summary: dto.summary,
+      review_request: reviewRequest,
+    })
+
+    return this.reviewRepo.save(review)
   }
 }

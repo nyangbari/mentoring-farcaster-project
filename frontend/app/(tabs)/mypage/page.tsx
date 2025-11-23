@@ -88,18 +88,6 @@ export default function MyPage() {
                 </div>
               </div>
             )}
-
-            {/* Additional Profile Data */}
-            {user.profile && (
-              <div className="mt-6 pt-6 border-t border-gray-300 dark:border-gray-600">
-                <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-3">
-                  추가 프로필 정보
-                </h3>
-                <pre className="bg-white dark:bg-gray-900 rounded p-4 text-xs text-gray-600 dark:text-gray-400 overflow-auto max-h-96">
-                  {JSON.stringify(user.profile, null, 2)}
-                </pre>
-              </div>
-            )}
           </div>
         </div>
       ) : (

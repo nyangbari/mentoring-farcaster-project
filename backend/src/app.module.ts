@@ -1,14 +1,22 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { ConfigModule } from '@nestjs/config';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { UserService } from './user/user.service';
 import { UserModule } from './user/user.module';
 import { AuthModule } from './auth/auth.module';
 import { ReviewRequestModule } from './review-request/review-request.module';
+import { ReviewModule } from './review/review.module';
+import { VaultModule } from './vault/vault.module';
+import { BlockchainModule } from './blockchain/blockchain.module';
 
 @Module({
   imports: [
+    ConfigModule.forRoot({
+      isGlobal: true,
+      envFilePath: '.env',
+    }),
     TypeOrmModule.forRoot({
       type: 'postgres',
       host: process.env.DATABASE_HOST ?? 'db',
@@ -22,6 +30,9 @@ import { ReviewRequestModule } from './review-request/review-request.module';
     UserModule,
     AuthModule,
     ReviewRequestModule,
+    ReviewModule,
+    VaultModule,
+    BlockchainModule,
   ],
   controllers: [AppController],
   providers: [AppService, UserService],

@@ -14,9 +14,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { useUserStore } from "@/lib/store/userStore";
 
 export default function CreateReviewRequestPage() {
   const router = useRouter();
+  const { user, connectedWallet } = useUserStore();
   const [formData, setFormData] = useState({
     title: "",
     category: "",
@@ -24,6 +34,7 @@ export default function CreateReviewRequestPage() {
     amount: "",
     deadline: "",
   });
+  const [showWalletAlert, setShowWalletAlert] = useState(false);
 
   // 토큰 잔액 확인 함수 (추후 구현 예정)
   const checkTokenBalance = async (requiredAmount: number): Promise<boolean> => {
@@ -36,6 +47,12 @@ export default function CreateReviewRequestPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // 지갑 연동 확인
+    if (!connectedWallet) {
+      setShowWalletAlert(true);
+      return;
+    }
 
     // 카테고리 필수 체크
     if (!formData.category) {
@@ -59,10 +76,13 @@ export default function CreateReviewRequestPage() {
       return;
     }
 
-    // 폼 데이터를 API 형식에 맞게 변환
+    // 폼 데이터를 새로운 API 형식에 맞게 변환
     const requestData = {
-      user_id: "user_temp_001", // TODO: 실제 로그인한 사용자 ID로 교체 필요
+      user_id: user?.fid.toString() || "unknown",
+      wallet_address: connectedWallet,
       title: formData.title,
+      user_name: user?.displayName || user?.username || "Anonymous",
+      user_profile_url: user?.pfpUrl || "",
       category: formData.category,
       description: formData.content,
       reward: rewardAmount,
@@ -210,6 +230,35 @@ export default function CreateReviewRequestPage() {
           </Button>
         </form>
       </div>
+
+      {/* 지갑 미연동 알림 Dialog */}
+      <Dialog open={showWalletAlert} onOpenChange={setShowWalletAlert}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>지갑 연동 필요</DialogTitle>
+            <DialogDescription>
+              리뷰 요청을 등록하려면 먼저 지갑을 연동해주세요.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setShowWalletAlert(false)}
+            >
+              취소
+            </Button>
+            <Button
+              onClick={() => {
+                setShowWalletAlert(false);
+                router.push("/mypage");
+              }}
+              className="bg-purple-600 hover:bg-purple-700 text-white"
+            >
+              지갑 연동하러 가기
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

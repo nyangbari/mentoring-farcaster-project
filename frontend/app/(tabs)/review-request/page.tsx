@@ -8,6 +8,8 @@ import ReviewRequestItem from "@/components/custom/ReviewRequestItem";
 interface ReviewRequestData {
   id: number;
   user_id: string;
+  user_name: string;
+  user_profile_url: string;
   title: string;
   category: string;
   description: string;
@@ -114,8 +116,8 @@ export default function ReviewRequestPage() {
           <ReviewRequestItem
             key={item.id}
             author={{
-              name: item.user_id,
-              avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${item.user_id}`,
+              name: item.user_name,
+              avatar: item.user_profile_url,
             }}
             date={formatDate(item.deadline)}
             title={item.title}

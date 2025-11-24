@@ -13,7 +13,7 @@ export class CreateReviewDto {
   @IsNotEmpty()
   review_hash: string;
 
-  @ApiProperty({ description: '리뷰어의 사용자 ID (user PK)', minimum: 1 })
+  @ApiProperty({ description: '리뷰어의 사용자 ID (user PK)' })
   @IsString()
   @IsNotEmpty()
   reviewer_f_id: string;

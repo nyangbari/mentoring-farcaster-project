@@ -105,7 +105,7 @@ export class ReviewQueryController {
   @Post('create-review')
   @HttpCode(HttpStatus.CREATED)
   @ApiBody({ type: CreateReviewDto })
-  @ApiCreatedResponse({ description: 'Review successfully created' })
+  @ApiCreatedResponse({ description: '리뷰생성하는거' })
   async createReview(@Body() dto: CreateReviewDto) {
     const created = await this.review.createReview(dto);
     return this.mapReviewResponse(created);

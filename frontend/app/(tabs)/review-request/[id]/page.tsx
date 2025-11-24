@@ -2,12 +2,13 @@
 
 import { useRouter, useParams } from "next/navigation";
 import { useState, useEffect } from "react";
-import { ArrowLeft, MessageCircle, Clock, Coins } from "lucide-react";
+import { ArrowLeft, Clock, Coins } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import ReviewWriteDialog from "@/components/custom/ReviewWriteDialog";
 import ReviewItem from "@/components/custom/ReviewItem";
+import { useUserStore } from "@/lib/store/userStore";
 
 interface ReviewRequestData {
   id: number;
@@ -42,6 +43,7 @@ export default function ReviewRequestDetailPage() {
   const router = useRouter();
   const params = useParams();
   const id = params.id as string;
+  const { user } = useUserStore();
 
   const [item, setItem] = useState<ReviewRequestData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -231,18 +233,12 @@ export default function ReviewRequestDetailPage() {
               {item.description}
             </div>
 
-            {/* 하단 정보: 보상, 댓글, 유효기간 */}
+            {/* 하단 정보: 보상, 유효기간 */}
             <div className="flex items-center gap-4 pt-4 border-t text-sm text-gray-600 dark:text-gray-400">
               {/* 보상 코인 */}
               <div className="flex items-center gap-1">
                 <Coins className="h-4 w-4" />
                 <span className="font-semibold">{item.reward} 코인</span>
-              </div>
-
-              {/* 댓글 개수 */}
-              <div className="flex items-center gap-1">
-                <MessageCircle className="h-4 w-4" />
-                <span>0</span>
               </div>
 
               {/* 유효 기간 */}
@@ -292,18 +288,36 @@ export default function ReviewRequestDetailPage() {
             )}
 
             {!reviewsLoading && !reviewsError && reviews.map((review) => (
-              <ReviewItem
-                key={review.review_id}
-                reviewer_user_name={review.reviewer_user_name}
-                reviewer_user_profile_url={review.reviewer_user_profile_url}
-                rating={review.rating}
-                review_hash={review.review_hash}
-                summary={review.summary}
-                onClick={() => {
-                  // 리뷰 상세 페이지로 이동하거나 캐스트로 이동
-                  window.open(`https://warpcast.com/~/conversations/${review.review_hash}`, '_blank');
-                }}
-              />
+              <div key={review.review_id} className="relative">
+                <ReviewItem
+                  reviewer_user_name={review.reviewer_user_name}
+                  reviewer_user_profile_url={review.reviewer_user_profile_url}
+                  rating={review.rating}
+                  review_hash={review.review_hash}
+                  summary={review.summary}
+                  onClick={() => {
+                    // 리뷰 상세 페이지로 이동하거나 캐스트로 이동
+                    window.open(`https://warpcast.com/~/conversations/${review.review_hash}`, '_blank');
+                  }}
+                />
+                {/* 작성자인 경우 보상 지급 버튼 표시 */}
+                {user && item && String(user.fid) === item.f_id && (
+                  <div className="absolute bottom-4 right-4">
+                    <Button
+                      size="sm"
+                      className="bg-orange-600 hover:bg-orange-700 text-white flex items-center gap-1"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        // TODO: 보상 지급 로직 구현
+                        console.log('보상 지급:', review.review_id);
+                      }}
+                    >
+                      <Coins className="h-4 w-4" />
+                      보상 지급
+                    </Button>
+                  </div>
+                )}
+              </div>
             ))}
           </div>
         </div>

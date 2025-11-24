@@ -9,11 +9,21 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Star } from "lucide-react";
+import { useUserStore } from "@/lib/store/userStore";
 
 interface ReviewWriteDialogProps {
   open: boolean;
@@ -26,60 +36,89 @@ export default function ReviewWriteDialog({
   onOpenChange,
   reviewRequestId,
 }: ReviewWriteDialogProps) {
+  const { user, connectedWallet } = useUserStore();
   const [castHash, setCastHash] = useState("");
   const [description, setDescription] = useState("");
   const [rating, setRating] = useState(0);
   const [hoveredRating, setHoveredRating] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // 알림 다이얼로그 상태
+  const [alertOpen, setAlertOpen] = useState(false);
+  const [alertMessage, setAlertMessage] = useState("");
+  const [alertTitle, setAlertTitle] = useState("");
+
+  // 알림 표시 함수
+  const showAlert = (title: string, message: string) => {
+    setAlertTitle(title);
+    setAlertMessage(message);
+    setAlertOpen(true);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    // 유효성 검사
+    if (!user?.fid) {
+      showAlert("로그인 필요", "로그인이 필요합니다.");
+      return;
+    }
+
+    if (!connectedWallet) {
+      showAlert("지갑 연결 필요", "지갑 연결이 필요합니다.");
+      return;
+    }
+
     if (!castHash.trim()) {
-      alert("리뷰 캐스트 해시를 입력해주세요.");
+      showAlert("입력 필요", "리뷰 캐스트 해시를 입력해주세요.");
       return;
     }
 
     if (rating === 0) {
-      alert("별점을 선택해주세요.");
+      showAlert("별점 선택 필요", "별점을 선택해주세요.");
       return;
     }
 
     if (!description.trim()) {
-      alert("간단한 설명을 입력해주세요.");
+      showAlert("입력 필요", "간단한 설명을 입력해주세요.");
       return;
     }
 
     if (description.length > 50) {
-      alert("설명은 50자 이내로 입력해주세요.");
+      showAlert("글자 수 초과", "설명은 50자 이내로 입력해주세요.");
       return;
     }
 
     try {
       setIsSubmitting(true);
 
-      // TODO: 실제 API 호출 로직 구현
+      // API 명세에 맞게 요청 데이터 구성
       const reviewData = {
         review_request_id: reviewRequestId,
-        cast_hash: castHash,
+        review_hash: castHash,
+        reviewer_f_id: user.fid.toString(),
+        reviewer_user_name: user.displayName || user.username || "Anonymous",
+        reviewer_user_profile_url: user.pfpUrl || "",
+        reviewer_wallet_addr: connectedWallet,
         rating: rating,
-        description: description,
+        summary: description,
       };
 
       console.log("리뷰 작성 데이터:", reviewData);
 
-      // API 호출 예시
-      // const response = await fetch('/api/review', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify(reviewData),
-      // });
-      //
-      // if (!response.ok) {
-      //   throw new Error('리뷰 작성 실패');
-      // }
+      // API 호출
+      const response = await fetch('/api/review/create-review', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(reviewData),
+      });
 
-      alert("리뷰가 성공적으로 작성되었습니다!");
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `리뷰 작성 실패: ${response.status}`);
+      }
+
+      showAlert("성공", "리뷰가 성공적으로 작성되었습니다!");
 
       // 폼 초기화
       setCastHash("");
@@ -88,7 +127,7 @@ export default function ReviewWriteDialog({
       onOpenChange(false);
     } catch (error) {
       console.error("리뷰 작성 에러:", error);
-      alert("리뷰 작성 중 오류가 발생했습니다.");
+      showAlert("오류 발생", `리뷰 작성 중 오류가 발생했습니다: ${error instanceof Error ? error.message : '알 수 없는 오류'}`);
     } finally {
       setIsSubmitting(false);
     }
@@ -187,6 +226,19 @@ export default function ReviewWriteDialog({
           </DialogFooter>
         </form>
       </DialogContent>
+
+      {/* 알림 다이얼로그 */}
+      <AlertDialog open={alertOpen} onOpenChange={setAlertOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{alertTitle}</AlertDialogTitle>
+            <AlertDialogDescription>{alertMessage}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction>확인</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Dialog>
   );
 }

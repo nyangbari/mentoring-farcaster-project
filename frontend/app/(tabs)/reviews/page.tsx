@@ -1,52 +1,149 @@
-import { Button } from "@/components/ui/button";
-import ReviewWriteItem from "@/components/custom/ReviewWriteItem";
+"use client";
+
+import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
+import { useUserStore } from "@/lib/store/userStore";
+import MyReviewRequestItem from "@/components/custom/MyReviewRequestItem";
+
+interface MyReviewRequestData {
+  id: number;
+  f_id: string;
+  user_name: string;
+  user_profile_url: string;
+  title: string;
+  category: string;
+  description: string;
+  reward: number;
+  deadline: string;
+}
+
+interface MyReviewRequestApiResponse {
+  items: MyReviewRequestData[];
+  total_items: number;
+}
 
 export default function ReviewsPage() {
-  // 예시 데이터
-  const items = Array.from({ length: 10 }, (_, i) => ({
-    id: i + 1,
-    author: {
-      name: `Reviewer ${i + 1}`,
-      avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=reviewer${i + 1}`,
-    },
-    date: "2024.11.14",
-    title: `리뷰 제목 ${i + 1}`,
-    rating: Math.floor(Math.random() * 5) + 1, // 1-5 랜덤 별점
-    content: "이 프로젝트는 정말 훌륭했습니다. 코드 구조가 깔끔하고 잘 정리되어 있어서 이해하기 쉬웠습니다. 특히 에러 핸들링 부분이 잘 되어 있어 안정적으로 작동했습니다.",
-    images: i % 2 === 0 ? [
-      "https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=400",
-      "https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=400",
-    ] : undefined, // 짝수 아이템만 이미지 추가
-    likeCount: Math.floor(Math.random() * 100) + 10, // 10-109 랜덤 좋아요 개수
-  }));
+  const router = useRouter();
+  const { user } = useUserStore();
+  const [items, setItems] = useState<MyReviewRequestData[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+
+  // 페이지 로딩 시 API 호출
+  useEffect(() => {
+    const fetchMyReviewRequests = async () => {
+      if (!user?.fid) {
+        setIsLoading(false);
+        return;
+      }
+
+      try {
+        setIsLoading(true);
+        const response = await fetch(
+          `/api/my-review-request?page=${page}&f_id=${user.fid}`
+        );
+
+        if (!response.ok) {
+          throw new Error(`API 호출 실패: ${response.status}`);
+        }
+
+        const data: MyReviewRequestApiResponse = await response.json();
+        setItems(data.items);
+        setTotalItems(data.total_items);
+        setError(null);
+      } catch (err) {
+        console.error("나의 리뷰 요청 목록 조회 실패:", err);
+        setError(err instanceof Error ? err.message : "알 수 없는 오류");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchMyReviewRequests();
+  }, [page, user?.fid]);
+
+  // 날짜를 "YYYY.MM.DD" 형식으로 변환
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}.${month}.${day}`;
+  };
+
+  // 마감일까지 남은 기간 계산
+  const calculateRemainingDays = (deadline: string) => {
+    const today = new Date();
+    const deadlineDate = new Date(deadline);
+    const diffTime = deadlineDate.getTime() - today.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    if (diffDays < 0) return "마감";
+    if (diffDays === 0) return "오늘 마감";
+    return `${diffDays}일 남음`;
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-black">
       {/* Header */}
       <div className="sticky top-0 z-10 bg-white dark:bg-black border-b p-4">
         <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold">리뷰 작성</h1>
-          <Button className="bg-orange-600 hover:bg-orange-700 text-white">
-            리뷰 작성하기
-          </Button>
+          <h1 className="text-2xl font-bold">내 리뷰 요청</h1>
         </div>
       </div>
 
       {/* Content */}
       <div className="flex flex-col gap-4 p-4">
-        {items.map((item) => (
-          <ReviewWriteItem
+        {isLoading && (
+          <div className="text-center py-8 text-gray-500">
+            로딩 중...
+          </div>
+        )}
+
+        {error && (
+          <div className="text-center py-8 text-red-500">
+            에러: {error}
+          </div>
+        )}
+
+        {!isLoading && !error && !user && (
+          <div className="text-center py-8 text-gray-500">
+            로그인이 필요합니다.
+          </div>
+        )}
+
+        {!isLoading && !error && user && items.length === 0 && (
+          <div className="text-center py-8 text-gray-500">
+            등록한 리뷰 요청이 없습니다.
+          </div>
+        )}
+
+        {!isLoading && !error && items.map((item) => (
+          <MyReviewRequestItem
             key={item.id}
-            author={item.author}
-            date={item.date}
+            author={{
+              name: item.user_name,
+              avatar: item.user_profile_url,
+            }}
+            date={formatDate(item.deadline)}
             title={item.title}
-            rating={item.rating}
-            content={item.content}
-            images={item.images}
-            likeCount={item.likeCount}
+            content={item.description}
+            reward={item.reward}
+            commentCount={0} // TODO: 댓글 수 API 추가 필요
+            validPeriod={calculateRemainingDays(item.deadline)}
+            onClick={() => router.push(`/review-request/${item.id}`)}
           />
         ))}
       </div>
+
+      {/* Pagination info */}
+      {!isLoading && !error && items.length > 0 && (
+        <div className="text-center py-4 text-sm text-gray-500">
+          총 {totalItems}개의 리뷰 요청
+        </div>
+      )}
     </div>
   );
 }

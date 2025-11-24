@@ -1,11 +1,12 @@
 import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
-import { TokenService } from '../blockchain/token.service'
-import { VaultService } from '../vault/vault.service'
+import { TokenService } from '../../blockchain/token.service'
+import { VaultService } from '../../vault/vault.service'
 import { Review } from './review.entity'
 import { ReviewRequest } from '../review-request/review-request.entity'
 import { CreateReviewDto } from './dto/create-review.dto'
+import { User } from '../../user/user.entity'
 
 @Injectable()
 export class ReviewService {
@@ -17,7 +18,9 @@ export class ReviewService {
     @InjectRepository(Review)
     private readonly reviewRepo: Repository<Review>,
     @InjectRepository(ReviewRequest)
-    private readonly reviewRequestRepo: Repository<ReviewRequest>
+    private readonly reviewRequestRepo: Repository<ReviewRequest>,
+    @InjectRepository(User)
+    private readonly userRepo: Repository<User>
   ) {}
 
   private normalizePagination(page?: number, take = this.DEFAULT_PAGE_SIZE) {
@@ -206,25 +209,49 @@ export class ReviewService {
     }
   }
 
-  async getReviewsForRequester(userId: string, page = 1, take = this.DEFAULT_PAGE_SIZE) {
-    const { page: p, take: t, skip } = this.normalizePagination(page, take)
+  async getReviewsByHash(reviewHash: string) {
+    const items = await this.reviewRepo.find({
+      where: { review_hash: reviewHash },
+      order: { createdAt: 'DESC' },
+    })
 
-    const qb = this.reviewRepo
-      .createQueryBuilder('review')
-      .innerJoin('review.review_request', 'request')
-      .where('request.user_id = :userId', { userId })
-      .orderBy('review.createdAt', 'DESC')
-      .skip(skip)
-      .take(t)
+    return {
+      items,
+      total: items.length,
+    }
+  }
 
-    const [items, total] = await qb.getManyAndCount()
+  async getReviewsByRequestId(reviewRequestId: number, page = 0) {
+    const normalizedPage = Math.max(0, Number.isFinite(Number(page)) ? Number(page) : 0)
+    const defaultTake = Math.max(1, this.DEFAULT_PAGE_SIZE)
+    const skip = normalizedPage * defaultTake
+
+    const total = await this.reviewRepo.count({ where: { review_request_id: reviewRequestId } })
+
+    if (skip >= total) {
+      return {
+        items: [],
+        total,
+        page: normalizedPage,
+        take: 0,
+      }
+    }
+
+    const remaining = total - skip
+    const take = Math.min(defaultTake, remaining)
+
+    const items = await this.reviewRepo.find({
+      where: { review_request_id: reviewRequestId },
+      order: { createdAt: 'DESC' },
+      take,
+      skip,
+    })
 
     return {
       items,
       total,
-      page: p,
-      take: t,
-      totalPages: Math.ceil(total / t) || 0,
+      page: normalizedPage,
+      take,
     }
   }
 
@@ -234,14 +261,24 @@ export class ReviewService {
       throw new NotFoundException(`Review request ${dto.review_request_id} not found`)
     }
 
-    const review = this.reviewRepo.create({
-      id: dto.review_id,
+    const reviewer = await this.userRepo.findOne({ where: { f_id: dto.reviewer_f_id } })
+    if (!reviewer) {
+      throw new NotFoundException(`Reviewer (f_id=${dto.reviewer_f_id}) not found`)
+    }
+
+    const walletAddress = reviewer.wallet_address ?? dto.reviewer_wallet_addr
+
+    if (!walletAddress) {
+      throw new BadRequestException('리뷰어 지갑 주소를 확인할 수 없습니다')
+    }
+
+      const review = this.reviewRepo.create({
       review_request_id: dto.review_request_id,
       review_hash: dto.review_hash,
-      reviewer_user_id: dto.reviewer_user_id,
-      reviewer_user_name: dto.reviewer_user_name,
-      reviewer_user_profile_url: dto.reviewer_user_profile_url,
-      reviewer_wallet_addr: dto.reviewer_wallet_addr,
+      reviewer_f_id: reviewer.f_id,
+      reviewer_user_name: reviewer.user_name ?? dto.reviewer_user_name ?? null,
+      reviewer_user_profile_url: reviewer.user_profile_url ?? dto.reviewer_user_profile_url ?? null,
+      reviewer_wallet_addr: walletAddress,
       rating: dto.rating,
       summary: dto.summary,
       review_request: reviewRequest,

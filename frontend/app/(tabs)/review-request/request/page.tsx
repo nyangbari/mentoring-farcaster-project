@@ -78,7 +78,7 @@ export default function CreateReviewRequestPage() {
 
     // 폼 데이터를 새로운 API 형식에 맞게 변환
     const requestData = {
-      user_id: user?.fid.toString() || "unknown",
+      f_id: user?.fid.toString() || "unknown",
       wallet_address: connectedWallet,
       title: formData.title,
       user_name: user?.displayName || user?.username || "Anonymous",

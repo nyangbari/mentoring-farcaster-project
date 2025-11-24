@@ -7,7 +7,7 @@ import ReviewRequestItem from "@/components/custom/ReviewRequestItem";
 
 interface ReviewRequestData {
   id: number;
-  user_id: string;
+  f_id: string;
   user_name: string;
   user_profile_url: string;
   title: string;

@@ -6,16 +6,19 @@ export class User {
   id: number;
 
   @Column({ type: 'varchar', length: 255, unique: true, nullable: true })
+  f_id: string | null;
+
+  @Column({ type: 'varchar', length: 255, unique: true, nullable: true })
   wallet_address: string | null;  // 지갑 주소 (고유값)
 
   @Column({ default: false })
   welcome_bonus_claimed: boolean;
 
   @Column({ nullable: true, unique: true })
-  username: string;
+  user_name: string;
 
-  @Column({ nullable: true })  // nullable: true 추가
-  password?: string;  // ? 추가
+  @Column({ type: 'varchar', length: 512, nullable: true })
+  user_profile_url: string | null;
 
   @CreateDateColumn()
   createdAt: Date;

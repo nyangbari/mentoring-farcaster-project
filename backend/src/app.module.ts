@@ -5,8 +5,8 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { UserModule } from './user/user.module';
 import { AuthModule } from './auth/auth.module';
-import { ReviewRequestModule } from './review-request/review-request.module';
-import { ReviewModule } from './review/review.module';
+import { ReviewRequestModule } from './features/review-request/review-request.module';
+import { ReviewModule } from './features/review/review.module';
 import { VaultModule } from './vault/vault.module';
 import { BlockchainModule } from './blockchain/blockchain.module';
 

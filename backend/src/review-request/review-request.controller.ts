@@ -19,6 +19,7 @@ import { VaultService } from '../vault/vault.service';
 import { SearchReviewRequestQueryDto } from './dto/search-review-request-query.dto';
 import { MyReviewRequestQueryDto } from './dto/my-review-request-query.dto';
 import { ReviewRequest } from './review-request.entity';
+import { CastQueryDto } from './dto/cast-query.dto';
 
 @ApiTags('review-request')
 @Controller('api')
@@ -77,6 +78,44 @@ export class ReviewRequestController {
     };
   }
 
+  @ApiQuery({
+    required: true,
+    name: 'fid',
+    type: String,
+  })
+  @ApiQuery({
+    required: true,
+    name: 'hash',
+    type: String,
+  })
+  @Get('review-request/cast')
+  async getCast(
+    @Query('fid') fid: string,  // ParseIntPipe 제거
+    @Query('hash') hash: string,
+  ) {
+    console.log('🔥 fid:', fid, 'hash:', hash);
+    return this.service.getCast(fid, hash);  // service도 string 받도록 수정 필요
+  }
+
+  @ApiQuery({
+    required: true,
+    name: 'fid',
+    type: String,
+  })
+  @ApiQuery({
+    required: true,
+    name: 'hash',
+    type: String,
+  })
+  @Get('review-request/replies')
+  async getReplies(
+    @Query('fid') fid: string,
+    @Query('hash') hash: string,
+  ) {
+    return this.service.getReplies(fid, hash);
+  }
+    
+    
   @Get('review-request/:id')
   @ApiParam({ name: 'id', type: Number })
   @ApiOkResponse({ description: 'Single review request', type: CreateReviewRequestDto })
@@ -119,16 +158,7 @@ export class ReviewRequestController {
       num_of_reviews: popular.numReviews,
     };
   }
-      // ⭐ 추가됨: 파캐스터 댓글 조회용 API
-@Get('review-request/cast')
-@ApiQuery({ name: 'fid', required: true, type: String })
-@ApiQuery({ name: 'hash', required: true, type: String })
-async getCast(
-  @Query('fid') fid: string,
-  @Query('hash') hash: string,
-) {
-  return this.service.getCast(Number(fid), hash);
-}
+
 
 
   private mapReviewRequest(it: ReviewRequest) {

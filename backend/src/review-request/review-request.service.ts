@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { ReviewRequest } from './review-request.entity';
 import { CreateReviewRequestDto } from './dto/create-review-request.dto';
 import axios from 'axios';  //추가 
+import { BadRequestException } from '@nestjs/common';
 
 @Injectable()
 export class ReviewRequestService {
@@ -129,17 +130,34 @@ export class ReviewRequestService {
       numReviews: Number(numReviewsRaw ?? 0),
     };
   }
-  // ⭐ 추가됨
-async getReplies(fid: number, hash: string) {
+  // ⭐ 추가됨   
+async getReplies(fid: string, hash: string) {
   const url = `http://210.109.54.183:3381/v1/replies?fid=${fid}&hash=${hash}`;
   const res = await axios.get(url);
   return res.data;
 }
 
-async getCast(fid: number, hash: string) {
+async getCast(fid: string, hash: string) {
   const url = `http://210.109.54.183:3381/v1/castById?fid=${fid}&hash=${hash}`;
   const res = await axios.get(url);
-  return res.data;
+  
+  const text = res.data?.data?.castAddBody?.text;
+  const embeds = res.data?.data?.castAddBody?.embeds;
+  
+  const hasText = text && text.trim() !== '';
+  const hasEmbeds = embeds && embeds.length > 0;
+  
+  // 둘 다 없으면 400 에러
+  if (!hasText && !hasEmbeds) {
+    throw new BadRequestException('No valid cast found (text or embeds required)');
+  }
+  
+  // 있는 것만 포함
+  const result: any = {};
+  if (hasText) result.text = text;
+  if (hasEmbeds) result.embeds = embeds;
+  
+  return result;
 }
 
 

@@ -9,6 +9,8 @@ import { User } from '../user/user.entity';
 export class WalletService {
   private readonly encryptionKey: Buffer;
   private readonly INITIAL_AIRDROP = 1000;
+  private readonly provider: ethers.JsonRpcProvider;
+  private readonly tokenAddress: string;
 
   constructor(
     @InjectRepository(User)
@@ -21,12 +23,18 @@ export class WalletService {
     } else {
       this.encryptionKey = Buffer.from(keyHex, 'hex');
     }
+
+    this.provider = new ethers.JsonRpcProvider(process.env.SEPOLIA_RPC_URL);
+    this.tokenAddress = process.env.TOKEN_ADDRESS || '';
   }
 
   async findByFid(fid: string): Promise<User | null> {
     return this.userRepo.findOneBy({ f_id: fid });
   }
 
+  /**
+   * FID 검증 및 지갑 생성
+   */
   async verifyOrCreateWallet(
     fid: string,
     profile?: { username?: string; profileUrl?: string },
@@ -69,6 +77,9 @@ export class WalletService {
     };
   }
 
+  /**
+   * 잔액 조회 (DB 기반)
+   */
   async getBalance(fid: string): Promise<number> {
     const user = await this.findByFid(fid);
     if (!user) {
@@ -77,6 +88,9 @@ export class WalletService {
     return Number(user.balance);
   }
 
+  /**
+   * FID 간 토큰 전송 (DB 기반 - 가스비 없음!)
+   */
   async transfer(fromFid: string, toFid: string, amount: number) {
     if (amount <= 0) {
       throw new BadRequestException('전송 금액은 0보다 커야 합니다');
@@ -98,6 +112,7 @@ export class WalletService {
       throw new NotFoundException(`수신자 FID ${toFid}를 찾을 수 없습니다`);
     }
 
+    // DB 트랜잭션으로 잔액 이동
     await this.userRepo.manager.transaction(async (manager) => {
       await manager.decrement(User, { f_id: fromFid }, 'balance', amount);
       await manager.increment(User, { f_id: toFid }, 'balance', amount);
@@ -115,6 +130,9 @@ export class WalletService {
     };
   }
 
+  /**
+   * Vault에 예치 (DB 기반 - 가스비 없음!)
+   */
   async depositToVault(fid: string, amount: number): Promise<number> {
     const user = await this.findByFid(fid);
     if (!user) {
@@ -127,21 +145,94 @@ export class WalletService {
       );
     }
 
+    // DB에서만 차감
     await this.userRepo.decrement({ f_id: fid }, 'balance', amount);
+
     const updated = await this.findByFid(fid);
     return Number(updated!.balance);
   }
 
+  /**
+   * Vault에서 수령 (DB 기반 - 가스비 없음!)
+   */
   async receiveFromVault(fid: string, amount: number): Promise<number> {
     const user = await this.findByFid(fid);
     if (!user) {
       throw new NotFoundException(`FID ${fid}를 찾을 수 없습니다`);
     }
 
+    // DB에서만 증가
     await this.userRepo.increment({ f_id: fid }, 'balance', amount);
+
     const updated = await this.findByFid(fid);
     return Number(updated!.balance);
   }
+
+  /**
+   * 외부 지갑으로 출금 (온체인 - 서버가 가스비 대납)
+   */
+  async withdrawToExternal(fid: string, toAddress: string, amount: number) {
+    const user = await this.findByFid(fid);
+    if (!user) {
+      throw new NotFoundException(`FID ${fid}를 찾을 수 없습니다`);
+    }
+
+    if (Number(user.balance) < amount) {
+      throw new BadRequestException(
+        `잔액 부족: 보유 ${user.balance} MTR, 요청 ${amount} MTR`,
+      );
+    }
+
+    const serverPrivateKey = process.env.PRIVATE_KEY;
+    if (!serverPrivateKey) {
+      throw new BadRequestException('서버 지갑 키가 설정되지 않았습니다');
+    }
+
+    // 서버 지갑에서 외부로 전송 (서버가 가스비 부담)
+    const txHash = await this.executeTransfer(
+      serverPrivateKey.replace(/^0x/, ''),
+      toAddress,
+      amount,
+    );
+
+    // DB 잔액 차감
+    await this.userRepo.decrement({ f_id: fid }, 'balance', amount);
+
+    const updated = await this.findByFid(fid);
+
+    return {
+      fid,
+      toAddress,
+      amount,
+      txHash,
+      remainingBalance: Number(updated!.balance),
+    };
+  }
+
+  /**
+   * 온체인 토큰 전송 (서버 지갑에서)
+   */
+  private async executeTransfer(
+    senderPrivateKey: string,
+    toAddress: string,
+    amount: number,
+  ): Promise<string> {
+    const wallet = new ethers.Wallet(senderPrivateKey, this.provider);
+
+    const tokenContract = new ethers.Contract(
+      this.tokenAddress,
+      ['function transfer(address to, uint256 amount) returns (bool)'],
+      wallet,
+    );
+
+    const amountWei = ethers.parseUnits(amount.toString(), 18);
+    const tx = await tokenContract.transfer(toAddress, amountWei);
+    const receipt = await tx.wait();
+
+    return receipt.hash;
+  }
+
+  // ========== 암호화/복호화 ==========
 
   private encrypt(text: string): string {
     const iv = crypto.randomBytes(16);

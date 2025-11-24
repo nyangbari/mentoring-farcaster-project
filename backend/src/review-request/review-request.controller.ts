@@ -80,60 +80,6 @@ export class ReviewRequestController {
     };
   }
 
-  @ApiQuery({
-    required: true,
-    name: 'fid',
-    type: String,
-  })
-  @ApiQuery({
-    required: true,
-    name: 'hash',
-    type: String,
-  })
-  @Get('review-request/cast')
-  async getCast(
-    @Query('fid') fid: string,  // ParseIntPipe 제거
-    @Query('hash') hash: string,
-  ) {
-    console.log('🔥 fid:', fid, 'hash:', hash);
-    return this.service.getCast(fid, hash);  // service도 string 받도록 수정 필요
-  }
-
-  @ApiQuery({
-    required: true,
-    name: 'fid',
-    type: String,
-  })
-  @ApiQuery({
-    required: true,
-    name: 'hash',
-    type: String,
-  })
-  @Get('review-request/replies')
-  async getReplies(
-    @Query('fid') fid: string,
-    @Query('hash') hash: string,
-  ) {
-    return this.service.getReplies(fid, hash);
-  }
-    
-    
-  // ⭐ 구체적 경로를 먼저 배치 (중요!)
-  @Get('review-request/cast')
-  @ApiQuery({ name: 'fid', required: true, type: Number })
-  @ApiQuery({ name: 'hash', required: true, type: String })
-  async getCast(
-    @Query('fid') fid: string,
-    @Query('hash') hash: string,
-  ) {
-    const fidNum = Number(fid);
-    if (isNaN(fidNum)) {
-      throw new BadRequestException('fid must be a valid number');
-    }
-    return this.service.getCast(fidNum, hash);
-  }
-
-  // 동적 경로는 나중에
   @Get('review-request/:id')
   @ApiParam({ name: 'id', type: Number })
   @ApiOkResponse({ description: 'Single review request', type: CreateReviewRequestDto })

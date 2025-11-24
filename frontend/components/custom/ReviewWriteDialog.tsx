@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   Dialog,
   DialogContent,
@@ -36,6 +37,7 @@ export default function ReviewWriteDialog({
   onOpenChange,
   reviewRequestId,
 }: ReviewWriteDialogProps) {
+  const router = useRouter();
   const { user, connectedWallet } = useUserStore();
   const [castHash, setCastHash] = useState("");
   const [description, setDescription] = useState("");
@@ -47,11 +49,13 @@ export default function ReviewWriteDialog({
   const [alertOpen, setAlertOpen] = useState(false);
   const [alertMessage, setAlertMessage] = useState("");
   const [alertTitle, setAlertTitle] = useState("");
+  const [isSuccess, setIsSuccess] = useState(false);
 
   // 알림 표시 함수
-  const showAlert = (title: string, message: string) => {
+  const showAlert = (title: string, message: string, success = false) => {
     setAlertTitle(title);
     setAlertMessage(message);
+    setIsSuccess(success);
     setAlertOpen(true);
   };
 
@@ -118,16 +122,17 @@ export default function ReviewWriteDialog({
         throw new Error(errorData.message || `리뷰 작성 실패: ${response.status}`);
       }
 
-      showAlert("성공", "리뷰가 성공적으로 작성되었습니다!");
-
       // 폼 초기화
       setCastHash("");
       setRating(0);
       setDescription("");
       onOpenChange(false);
+
+      // 성공 알림 표시
+      showAlert("성공", "리뷰가 성공적으로 작성되었습니다!", true);
     } catch (error) {
       console.error("리뷰 작성 에러:", error);
-      showAlert("오류 발생", `리뷰 작성 중 오류가 발생했습니다: ${error instanceof Error ? error.message : '알 수 없는 오류'}`);
+      showAlert("오류 발생", `리뷰 작성 중 오류가 발생했습니다: ${error instanceof Error ? error.message : '알 수 없는 오류'}`, false);
     } finally {
       setIsSubmitting(false);
     }
@@ -235,7 +240,17 @@ export default function ReviewWriteDialog({
             <AlertDialogDescription>{alertMessage}</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogAction>확인</AlertDialogAction>
+            <AlertDialogAction
+              onClick={() => {
+                setAlertOpen(false);
+                if (isSuccess) {
+                  // 성공 시 리뷰 요청 탭으로 이동
+                  router.push("/review-request");
+                }
+              }}
+            >
+              확인
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

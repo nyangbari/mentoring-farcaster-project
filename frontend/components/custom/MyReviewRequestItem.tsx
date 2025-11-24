@@ -4,7 +4,7 @@ import {
   CardHeader,
 } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { MessageCircle, Clock, Coins } from "lucide-react";
+import { Clock, Coins } from "lucide-react";
 
 interface MyReviewRequestItemProps {
   author: {
@@ -15,7 +15,6 @@ interface MyReviewRequestItemProps {
   title: string;
   content: string;
   reward: number; // 보상 코인
-  commentCount: number; // 댓글 개수
   validPeriod: string; // 유효 기간
   onClick?: () => void; // 클릭 이벤트 핸들러
 }
@@ -26,7 +25,6 @@ export default function MyReviewRequestItem({
   title,
   content,
   reward,
-  commentCount,
   validPeriod,
   onClick,
 }: MyReviewRequestItemProps) {
@@ -68,18 +66,12 @@ export default function MyReviewRequestItem({
           {truncateContent(content)}
         </p>
 
-        {/* 하단 정보: 보상, 댓글, 유효기간 */}
+        {/* 하단 정보: 보상, 유효기간 */}
         <div className="flex items-center gap-4 pt-2 border-t text-sm text-gray-600 dark:text-gray-400">
           {/* 보상 코인 */}
           <div className="flex items-center gap-1">
             <Coins className="h-4 w-4" />
             <span>{reward}</span>
-          </div>
-
-          {/* 댓글 개수 */}
-          <div className="flex items-center gap-1">
-            <MessageCircle className="h-4 w-4" />
-            <span>{commentCount}</span>
           </div>
 
           {/* 유효 기간 */}

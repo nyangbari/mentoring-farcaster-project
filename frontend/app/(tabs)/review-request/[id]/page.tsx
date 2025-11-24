@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import ReviewWriteDialog from "@/components/custom/ReviewWriteDialog";
+import ReviewItem from "@/components/custom/ReviewItem";
 
 interface ReviewRequestData {
   id: number;
@@ -20,6 +21,23 @@ interface ReviewRequestData {
   deadline: string;
 }
 
+interface ReviewData {
+  review_id: number;
+  review_request_id: number;
+  review_hash: string;
+  reviewer_f_id: string;
+  reviewer_user_name: string;
+  reviewer_user_profile_url: string;
+  reviewer_wallet_addr: string;
+  rating: number;
+  summary: string;
+}
+
+interface ReviewListResponse {
+  items: ReviewData[];
+  total_items: number;
+}
+
 export default function ReviewRequestDetailPage() {
   const router = useRouter();
   const params = useParams();
@@ -30,7 +48,13 @@ export default function ReviewRequestDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
-  // 데이터 조회
+  // 리뷰 목록 상태
+  const [reviews, setReviews] = useState<ReviewData[]>([]);
+  const [reviewsLoading, setReviewsLoading] = useState(true);
+  const [reviewsError, setReviewsError] = useState<string | null>(null);
+  const [totalReviews, setTotalReviews] = useState(0);
+
+  // 리뷰 요청 데이터 조회
   useEffect(() => {
     const fetchReviewRequest = async () => {
       try {
@@ -53,6 +77,34 @@ export default function ReviewRequestDetailPage() {
     };
 
     fetchReviewRequest();
+  }, [id]);
+
+  // 리뷰 목록 조회
+  useEffect(() => {
+    const fetchReviews = async () => {
+      try {
+        setReviewsLoading(true);
+        const response = await fetch(
+          `/api/review_load_about_sepcific_request?review_request_id=${id}`
+        );
+
+        if (!response.ok) {
+          throw new Error(`리뷰 목록 조회 실패: ${response.status}`);
+        }
+
+        const data: ReviewListResponse = await response.json();
+        setReviews(data.items);
+        setTotalReviews(data.total_items);
+        setReviewsError(null);
+      } catch (err) {
+        console.error("리뷰 목록 조회 실패:", err);
+        setReviewsError(err instanceof Error ? err.message : "알 수 없는 오류");
+      } finally {
+        setReviewsLoading(false);
+      }
+    };
+
+    fetchReviews();
   }, [id]);
 
   // 날짜를 "YYYY.MM.DD" 형식으로 변환
@@ -210,6 +262,51 @@ export default function ReviewRequestDetailPage() {
             </Button>
           </CardContent>
         </Card>
+
+        {/* 리뷰 목록 섹션 */}
+        <div className="w-full max-w-3xl mx-auto mt-8">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-bold">
+              작성된 리뷰 {!reviewsLoading && `(${totalReviews})`}
+            </h2>
+          </div>
+
+          {/* 리뷰 목록 */}
+          <div className="space-y-4">
+            {reviewsLoading && (
+              <div className="text-center py-8 text-gray-500">
+                리뷰 로딩 중...
+              </div>
+            )}
+
+            {reviewsError && (
+              <div className="text-center py-8 text-red-500">
+                에러: {reviewsError}
+              </div>
+            )}
+
+            {!reviewsLoading && !reviewsError && reviews.length === 0 && (
+              <div className="text-center py-8 text-gray-500">
+                아직 작성된 리뷰가 없습니다.
+              </div>
+            )}
+
+            {!reviewsLoading && !reviewsError && reviews.map((review) => (
+              <ReviewItem
+                key={review.review_id}
+                reviewer_user_name={review.reviewer_user_name}
+                reviewer_user_profile_url={review.reviewer_user_profile_url}
+                rating={review.rating}
+                review_hash={review.review_hash}
+                summary={review.summary}
+                onClick={() => {
+                  // 리뷰 상세 페이지로 이동하거나 캐스트로 이동
+                  window.open(`https://warpcast.com/~/conversations/${review.review_hash}`, '_blank');
+                }}
+              />
+            ))}
+          </div>
+        </div>
       </div>
 
       {/* 리뷰 작성 Dialog */}

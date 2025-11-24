@@ -2,10 +2,10 @@ import { IsString, IsOptional, IsNumber, IsDateString, IsNotEmpty } from 'class-
 import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateReviewRequestDto {
-  @ApiProperty({ example: '123', description: 'User id (string)' })
+  @ApiProperty({ example: '123', description: 'f_id (string)' })
   @IsString()
   @IsNotEmpty()
-  user_id: string;
+  f_id: string;
 
   // 추가: 지갑 주소
   @ApiProperty({ 

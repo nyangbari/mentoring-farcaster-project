@@ -2,10 +2,10 @@ import { IsString, IsOptional, IsNumber, IsDateString, IsNotEmpty } from 'class-
 import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateReviewRequestDto {
-  @ApiProperty({ example: '123', description: 'User id (string)' })
+  @ApiProperty({ example: '123', description: 'f_id (string)' })
   @IsString()
   @IsNotEmpty()
-  user_id: string;
+  f_id: string;
 
   @ApiProperty({
     example: '0x405ff2f6d7b9bc2ad28eee8edaca6ab045c63825',

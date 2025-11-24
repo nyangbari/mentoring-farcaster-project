@@ -10,6 +10,6 @@ export class ReviewByRequestQueryDto {
   @IsOptional()
   @Type(() => Number)
   @IsInt()
-  @Min(1)
-  limit = 10;
+  @Min(0)
+  page = 0;
 }

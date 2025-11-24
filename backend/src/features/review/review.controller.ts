@@ -116,7 +116,7 @@ export class ReviewQueryController {
       review_id: item.id,
       review_request_id: item.review_request_id,
       review_hash: item.review_hash,
-      reviewer_user_id: item.reviewer_user_id,
+      reviewer_f_id: item.reviewer_f_id,
       reviewer_user_name: item.reviewer_user_name,
       reviewer_user_profile_url: item.reviewer_user_profile_url,
       reviewer_wallet_addr: item.reviewer_wallet_addr,

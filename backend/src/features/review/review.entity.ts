@@ -17,8 +17,8 @@ export class Review {
   @Column()
   review_hash: string;
 
-  @Column({ type: 'int', nullable: true })
-  reviewer_user_id: number | null;
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  reviewer_f_id: string | null;
 
   @Column({ type: 'varchar', length: 255, nullable: true })
   reviewer_user_name: string | null;

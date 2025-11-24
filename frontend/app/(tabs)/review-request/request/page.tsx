@@ -61,7 +61,7 @@ export default function CreateReviewRequestPage() {
 
     // 폼 데이터를 API 형식에 맞게 변환
     const requestData = {
-      user_id: "user_temp_001", // TODO: 실제 로그인한 사용자 ID로 교체 필요
+      f_id: "user_temp_001", // TODO: 실제 로그인한 사용자 ID로 교체 필요
       title: formData.title,
       category: formData.category,
       description: formData.content,

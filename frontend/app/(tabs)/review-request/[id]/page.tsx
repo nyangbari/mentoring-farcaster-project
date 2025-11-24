@@ -10,7 +10,7 @@ import ReviewWriteDialog from "@/components/custom/ReviewWriteDialog";
 
 interface ReviewRequestData {
   id: number;
-  user_id: string;
+  f_id: string;
   title: string;
   category: string;
   description: string;
@@ -145,15 +145,15 @@ export default function ReviewRequestDetailPage() {
               {/* 작성자 아바타 */}
               <Avatar className="h-10 w-10">
                 <AvatarImage
-                  src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${item.user_id}`}
-                  alt={item.user_id}
+                  src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${item.f_id}`}
+                  alt={item.f_id}
                 />
-                <AvatarFallback>{item.user_id.slice(0, 2).toUpperCase()}</AvatarFallback>
+                <AvatarFallback>{item.f_id.slice(0, 2).toUpperCase()}</AvatarFallback>
               </Avatar>
 
               {/* 작성자 이름과 날짜 */}
               <div className="flex flex-col">
-                <span className="text-sm font-semibold">{item.user_id}</span>
+                <span className="text-sm font-semibold">{item.f_id}</span>
                 <span className="text-xs text-gray-500">{formatDate(item.deadline)}</span>
               </div>
             </div>

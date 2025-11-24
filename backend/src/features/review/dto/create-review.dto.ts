@@ -1,4 +1,4 @@
-import { IsInt, IsNotEmpty, IsOptional, IsString, Max, Min } from 'class-validator';
+import { IsInt, IsNotEmpty, IsNumber, IsOptional, IsString, Max, Min } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateReviewDto {
@@ -14,9 +14,9 @@ export class CreateReviewDto {
   review_hash: string;
 
   @ApiProperty({ description: '리뷰어의 사용자 ID (user PK)', minimum: 1 })
-  @IsInt()
-  @Min(1)
-  reviewer_user_id: number;
+  @IsString()
+  @IsNotEmpty()
+  reviewer_f_id: string;
 
   @ApiProperty({ description: '리뷰어 이름', required: false })
   @IsOptional()

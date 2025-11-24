@@ -221,18 +221,37 @@ export class ReviewService {
     }
   }
 
-  async getReviewsByRequestId(reviewRequestId: number, limit = this.DEFAULT_PAGE_SIZE) {
-    const take = Math.max(1, Number(limit) || this.DEFAULT_PAGE_SIZE)
+  async getReviewsByRequestId(reviewRequestId: number, page = 0) {
+    const normalizedPage = Math.max(0, Number.isFinite(Number(page)) ? Number(page) : 0)
+    const defaultTake = Math.max(1, this.DEFAULT_PAGE_SIZE)
+    const skip = normalizedPage * defaultTake
+
+    const total = await this.reviewRepo.count({ where: { review_request_id: reviewRequestId } })
+
+    if (skip >= total) {
+      return {
+        items: [],
+        total,
+        page: normalizedPage,
+        take: 0,
+      }
+    }
+
+    const remaining = total - skip
+    const take = Math.min(defaultTake, remaining)
 
     const items = await this.reviewRepo.find({
       where: { review_request_id: reviewRequestId },
       order: { createdAt: 'DESC' },
       take,
+      skip,
     })
 
     return {
       items,
-      total: items.length,
+      total,
+      page: normalizedPage,
+      take,
     }
   }
 
@@ -242,9 +261,9 @@ export class ReviewService {
       throw new NotFoundException(`Review request ${dto.review_request_id} not found`)
     }
 
-    const reviewer = await this.userRepo.findOne({ where: { id: dto.reviewer_user_id } })
+    const reviewer = await this.userRepo.findOne({ where: { f_id: dto.reviewer_f_id } })
     if (!reviewer) {
-      throw new NotFoundException(`Reviewer (user_id=${dto.reviewer_user_id}) not found`)
+      throw new NotFoundException(`Reviewer (f_id=${dto.reviewer_f_id}) not found`)
     }
 
     const walletAddress = reviewer.wallet_address ?? dto.reviewer_wallet_addr
@@ -256,8 +275,8 @@ export class ReviewService {
       const review = this.reviewRepo.create({
       review_request_id: dto.review_request_id,
       review_hash: dto.review_hash,
-      reviewer_user_id: reviewer.id,
-        reviewer_user_name: reviewer.user_name ?? dto.reviewer_user_name ?? null,
+      reviewer_f_id: reviewer.f_id,
+      reviewer_user_name: reviewer.user_name ?? dto.reviewer_user_name ?? null,
       reviewer_user_profile_url: reviewer.user_profile_url ?? dto.reviewer_user_profile_url ?? null,
       reviewer_wallet_addr: walletAddress,
       rating: dto.rating,

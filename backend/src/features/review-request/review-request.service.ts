@@ -6,7 +6,7 @@ import { CreateReviewRequestDto } from '../create-review-request/dto/create-revi
 
 export interface ReviewRequestResponseDto {
   id: number;
-  user_id: string;
+  f_id: string;
   user_name: string | null;
   user_profile_url: string | null;
   title: string;
@@ -33,7 +33,7 @@ export class ReviewRequestService {
 
   async create(dto: CreateReviewRequestDto) {
     const ent = new ReviewRequest();
-    ent.user_id = dto.user_id;
+    ent.f_id = dto.f_id;
     ent.wallet_address = dto.wallet_address ?? null;  // 추가
     ent.user_name = dto.user_name ?? null;
     ent.user_profile_url = dto.user_profile_url ?? null;
@@ -98,11 +98,12 @@ export class ReviewRequestService {
     };
   }
 
-  async findByUser(userId: string, page = 1, take = 10) {
+  async findByUser(f_id: string, page = 1, take = 10) {
     const { page: p, take: t, skip } = this.normalizePagination(page, take);
+    const normalizedFId = String(f_id)
 
     const [items, total] = await this.repo.findAndCount({
-      where: { user_id: userId },
+      where: { f_id: normalizedFId },
       order: { createdAt: 'DESC' },
       skip,
       take: t,
@@ -144,7 +145,7 @@ export class ReviewRequestService {
   toResponseDto(it: ReviewRequest): ReviewRequestResponseDto {
     return {
       id: it.id,
-      user_id: it.user_id,
+      f_id: it.f_id,
       user_name: it.user_name,
       user_profile_url: it.user_profile_url,
       title: it.title,

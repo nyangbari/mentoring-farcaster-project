@@ -4,5 +4,5 @@ import { PaginationQueryDto } from './pagination-query.dto';
 export class MyReviewRequestQueryDto extends PaginationQueryDto {
   @IsString()
   @IsNotEmpty()
-  user_id: string;
+  f_id: string;
 }

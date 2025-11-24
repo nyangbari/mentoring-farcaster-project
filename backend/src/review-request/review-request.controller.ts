@@ -77,6 +77,22 @@ export class ReviewRequestController {
     };
   }
 
+  // ⭐ 구체적 경로를 먼저 배치 (중요!)
+  @Get('review-request/cast')
+  @ApiQuery({ name: 'fid', required: true, type: Number })
+  @ApiQuery({ name: 'hash', required: true, type: String })
+  async getCast(
+    @Query('fid') fid: string,
+    @Query('hash') hash: string,
+  ) {
+    const fidNum = Number(fid);
+    if (isNaN(fidNum)) {
+      throw new BadRequestException('fid must be a valid number');
+    }
+    return this.service.getCast(fidNum, hash);
+  }
+
+  // 동적 경로는 나중에
   @Get('review-request/:id')
   @ApiParam({ name: 'id', type: Number })
   @ApiOkResponse({ description: 'Single review request', type: CreateReviewRequestDto })
@@ -119,17 +135,6 @@ export class ReviewRequestController {
       num_of_reviews: popular.numReviews,
     };
   }
-      // ⭐ 추가됨: 파캐스터 댓글 조회용 API
-@Get('review-request/cast')
-@ApiQuery({ name: 'fid', required: true, type: String })
-@ApiQuery({ name: 'hash', required: true, type: String })
-async getCast(
-  @Query('fid') fid: string,
-  @Query('hash') hash: string,
-) {
-  return this.service.getCast(Number(fid), hash);
-}
-
 
   private mapReviewRequest(it: ReviewRequest) {
     return {
@@ -145,6 +150,3 @@ async getCast(
     };
   }
 }
-
-//토근 예치하는 부분
-

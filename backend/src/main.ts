@@ -9,24 +9,28 @@ async function bootstrap() {
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
-      forbidNonWhitelisted: true,  // 추가
-      transform: true,              // 추가
+      forbidNonWhitelisted: false,
+      transform: false,
     })
   );
 
-  // Swagger ����
+  // Swagger 설정
   const config = new DocumentBuilder()
     .setTitle('NestJS API')
-    .setDescription('NestJS + PostgreSQL + TypeORM + Swagger API ����')
+    .setDescription('NestJS + PostgreSQL + TypeORM + Swagger API')
     .setVersion('1.0')
     .build();
 
-  const document = SwaggerModule.createDocument(app, config);
+  // ⭐⭐⭐ 여기 수정됨!
+  const document = SwaggerModule.createDocument(app, config, {
+    deepScanRoutes: true,
+  });
+
   SwaggerModule.setup('api', app, document);
 
   await app.listen(process.env.PORT ?? 3000);
-  console.log(`? Server running on http://localhost:${process.env.PORT ?? 3000}`);
-  console.log(`? Swagger docs: http://localhost:${process.env.PORT ?? 3000}/api`);
+  console.log(`🚀 Server running on http://localhost:${process.env.PORT ?? 3000}`);
+  console.log(`📘 Swagger docs: http://localhost:${process.env.PORT ?? 3000}/api`);
 }
 
 bootstrap();

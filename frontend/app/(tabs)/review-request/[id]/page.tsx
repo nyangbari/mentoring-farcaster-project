@@ -292,6 +292,7 @@ export default function ReviewRequestDetailPage() {
                 <ReviewItem
                   reviewer_user_name={review.reviewer_user_name}
                   reviewer_user_profile_url={review.reviewer_user_profile_url}
+                  reviewer_f_id={review.reviewer_f_id}
                   rating={review.rating}
                   review_hash={review.review_hash}
                   summary={review.summary}

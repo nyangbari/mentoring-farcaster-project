@@ -221,6 +221,21 @@ export class ReviewService {
     }
   }
 
+  async getReviewsByRequestId(reviewRequestId: number, limit = this.DEFAULT_PAGE_SIZE) {
+    const take = Math.max(1, Number(limit) || this.DEFAULT_PAGE_SIZE)
+
+    const items = await this.reviewRepo.find({
+      where: { review_request_id: reviewRequestId },
+      order: { createdAt: 'DESC' },
+      take,
+    })
+
+    return {
+      items,
+      total: items.length,
+    }
+  }
+
   async createReview(dto: CreateReviewDto) {
     const reviewRequest = await this.reviewRequestRepo.findOne({ where: { id: dto.review_request_id } })
     if (!reviewRequest) {

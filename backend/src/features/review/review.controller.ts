@@ -1,10 +1,13 @@
-import { Controller, Post, Get, Body, Query } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiQuery, ApiResponse } from '@nestjs/swagger';
+import { Body, Controller, Get, HttpCode, HttpStatus, Post, Query } from '@nestjs/common';
+import { ApiBody, ApiCreatedResponse, ApiOkResponse, ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { ReviewService } from './review.service';
 import { DepositDto } from './dto/deposit.dto';
 import { RewardDto } from './dto/reward.dto';
 import { DistributeDto } from './dto/distribute.dto';
 import { CancelDto } from './dto/cancel.dto';
+import { GetReviewsQueryDto } from './dto/get-reviews-query.dto';
+import { CreateReviewDto } from './dto/create-review.dto';
+import { Review } from './review.entity';
 
 @ApiTags('Review')
 @Controller('review')
@@ -79,5 +82,46 @@ export class ReviewController {
   async getBalance(@Query('address') address: string) {
     const result = await this.review.getDepositBalance(address);
     return result;
+  }
+}
+
+@ApiTags('Review')
+@Controller('api/review')
+export class ReviewQueryController {
+  constructor(private readonly review: ReviewService) {}
+
+  @Get()
+  @ApiOkResponse({ description: 'Reviews written for a user\'s review requests' })
+  @ApiQuery({ name: 'review_hash', required: true, type: String, description: '해쉬값 주면됨' })
+  async getReviews(@Query() query: GetReviewsQueryDto) {
+    const result = await this.review.getReviewsByHash(query.review_hash);
+
+    return {
+      items: result.items.map((item) => this.mapReviewResponse(item)),
+      total_items: result.total,
+    };
+  }
+
+  @Post('create-review')
+  @HttpCode(HttpStatus.CREATED)
+  @ApiBody({ type: CreateReviewDto })
+  @ApiCreatedResponse({ description: 'Review successfully created' })
+  async createReview(@Body() dto: CreateReviewDto) {
+    const created = await this.review.createReview(dto);
+    return this.mapReviewResponse(created);
+  }
+
+  private mapReviewResponse(item: Review) {
+    return {
+      review_id: item.id,
+      review_request_id: item.review_request_id,
+      review_hash: item.review_hash,
+      reviewer_user_id: item.reviewer_user_id,
+      reviewer_user_name: item.reviewer_user_name,
+      reviewer_user_profile_url: item.reviewer_user_profile_url,
+      reviewer_wallet_addr: item.reviewer_wallet_addr,
+      rating: item.rating,
+      summary: item.summary,
+    };
   }
 }

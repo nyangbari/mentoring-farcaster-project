@@ -9,6 +9,7 @@ import { ReviewRequestModule } from './review-request/review-request.module';
 import { ReviewModule } from './review/review.module';
 import { VaultModule } from './vault/vault.module';
 import { BlockchainModule } from './blockchain/blockchain.module';
+import { WalletModule } from './wallet/wallet.module';
 
 @Module({
   imports: [
@@ -32,6 +33,7 @@ import { BlockchainModule } from './blockchain/blockchain.module';
     ReviewModule,
     VaultModule,
     BlockchainModule,
+    WalletModule,
   ],
   controllers: [AppController],
   providers: [AppService],

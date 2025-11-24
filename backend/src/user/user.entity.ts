@@ -1,21 +1,41 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+  Index,
+} from 'typeorm';
 
 @Entity()
 export class User {
   @PrimaryGeneratedColumn()
   id: number;
 
+  @Index({ unique: true })
   @Column({ type: 'varchar', length: 255, unique: true, nullable: true })
-  wallet_address: string | null;  // 지갑 주소 (고유값)
+  f_id: string | null;
+
+  @Column({ type: 'varchar', length: 255, unique: true, nullable: true })
+  wallet_address: string | null;
+
+  //추가
+  @Column({ type: 'text', nullable: true })
+  encrypted_private_key: string | null;
+
+  //추가
+  @Column({ type: 'decimal', precision: 36, scale: 18, default: 0 })
+  balance: number;
 
   @Column({ default: false })
   welcome_bonus_claimed: boolean;
 
-  @Column({ nullable: true, unique: true })
-  username: string;
+  // type 변경
+  @Column({ type: 'varchar', length: 255, nullable: true, unique: true })
+  user_name: string | null;
 
-  @Column({ nullable: true })  // nullable: true 추가
-  password?: string;  // ? 추가
+  @Column({ type: 'varchar', length: 512, nullable: true })
+  user_profile_url: string | null;
 
   @CreateDateColumn()
   createdAt: Date;

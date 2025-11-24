@@ -4,14 +4,16 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { User } from '../user/user.entity';
+import { WalletModule } from '../wallet/wallet.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([User]),
     JwtModule.register({
       secret: process.env.JWT_SECRET ?? 'SECRET_KEY',
-      signOptions: { expiresIn: (process.env.JWT_EXPIRES ?? '1h') as any },
+      signOptions: { expiresIn: '7d' },
     }),
+    WalletModule,
   ],
   providers: [AuthService],
   controllers: [AuthController],

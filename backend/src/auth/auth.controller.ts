@@ -1,34 +1,22 @@
-import { Controller, Post, Body } from '@nestjs/common';
-import { IsString, MinLength } from 'class-validator';
+import { Controller, Post, Body, HttpCode, HttpStatus } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiBody } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
-import { ApiProperty, ApiBody } from '@nestjs/swagger';
+import { FarcasterLoginDto } from './dto/farcaster-login.dto';
 
-class AuthDto {
-  @ApiProperty({ example: 'test1', description: 'username' })
-  @IsString()
-  username: string;
-
-  @ApiProperty({ example: 'password123', description: 'password (minimum 12 characters)', minLength: 6 })
-  @IsString()
-  @MinLength(6)
-  password: string;
-}
-
+@ApiTags('Auth')
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
-  @Post('register')
-  @ApiBody({ type: AuthDto })
-  register(@Body() body: AuthDto) {
-    const { username, password } = body;
-    return this.authService.register(username, password);
-  }
-
-  @Post('login')
-  @ApiBody({ type: AuthDto })
-  login(@Body() body: AuthDto) {
-    const { username, password } = body;
-    return this.authService.login(username, password);
+  @Post('farcaster')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Farcaster 로그인 (신규 시 1000 MTR 지급)' })
+  @ApiBody({ type: FarcasterLoginDto })
+  loginWithFarcaster(@Body() dto: FarcasterLoginDto) {
+    return this.authService.loginWithFarcaster(dto.fid, {
+      username: dto.username,
+      displayName: dto.displayName,
+      pfpUrl: dto.pfpUrl,
+    });
   }
 }

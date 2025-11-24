@@ -1,227 +1,196 @@
-import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common'
-import { InjectRepository } from '@nestjs/typeorm'
-import { Repository } from 'typeorm'
-import { TokenService } from '../blockchain/token.service'
-import { VaultService } from '../vault/vault.service'
-import { Review } from './review.entity'
-import { ReviewRequest } from '../review-request/review-request.entity'
-import { CreateReviewDto } from './dto/create-review.dto'
+import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { WalletService } from '../wallet/wallet.service';
+import { VaultService } from '../vault/vault.service';
+import { Review } from './review.entity';
+import { ReviewRequest } from '../review-request/review-request.entity';
+import { CreateReviewDto } from './dto/create-review.dto';
 
 @Injectable()
 export class ReviewService {
-  private readonly DEFAULT_PAGE_SIZE = 10
-
   constructor(
-    private readonly token: TokenService,
+    private readonly wallet: WalletService,
     private readonly vault: VaultService,
     @InjectRepository(Review)
     private readonly reviewRepo: Repository<Review>,
     @InjectRepository(ReviewRequest)
-    private readonly reviewRequestRepo: Repository<ReviewRequest>
+    private readonly reviewRequestRepo: Repository<ReviewRequest>,
   ) {}
 
-  private normalizePagination(page?: number, take = this.DEFAULT_PAGE_SIZE) {
-    const p = Math.max(1, Number(page) || 1)
-    const t = Math.max(1, Number(take) || this.DEFAULT_PAGE_SIZE)
-    const skip = (p - 1) * t
-    return { page: p, take: t, skip }
-  }
-
   /**
-   * 리뷰 요청자가 토큰을 예치
-   * 1. 온체인에서 실제 토큰 보유 확인
-   * 2. 검증 성공 시 VaultService에 예치
-   * 
-   * @param requesterAddress - 리뷰 요청자의 지갑 주소
-   * @param amount - 예치할 토큰 수량
-   * @returns 업데이트된 Vault 정보
+   * 리뷰 요청 시 토큰 예치 (FID 기반)
+   * - approve 불필요!
+   * - 사용자 지갑에서 바로 Vault로 이동
    */
-  async depositTokens(requesterAddress: string, amount: number) {
-    // Step 1: 사용자 토큰 보유량 확인
-    const balance = await this.token.getTokenBalance(requesterAddress)
-    
+  async depositTokens(requesterFid: string, amount: number) {
+    // Step 1: 사용자 잔액 확인
+    const balance = await this.wallet.getBalance(requesterFid);
+
     if (balance < amount) {
       throw new BadRequestException(
-        `잔액 부족: 보유 ${balance} 토큰, 요청 ${amount} 토큰`
-      )
+        `잔액 부족: 보유 ${balance} MTR, 요청 ${amount} MTR`
+      );
     }
 
-    // Step 2: approve 확인
-    const allowance = await this.token.getAllowance(requesterAddress)
-    
-    if (allowance < amount) {
-      throw new BadRequestException(
-        `승인 필요: ${amount} 토큰에 대한 approve() 호출 필요. 현재 승인: ${allowance}`
-      )
-    }
+    // Step 2: 사용자 지갑에서 차감
+    const remainingBalance = await this.wallet.depositToVault(requesterFid, amount);
 
-    // Step 3: 사용자 → 서버로 토큰 전송
-    const receipt = await this.token.transferToServer(requesterAddress, amount)
-
-    // Step 4: Vault에 기록
-    const updated = await this.vault.deposit(requesterAddress, amount)
+    // Step 3: Vault에 기록
+    const vaultBalance = await this.vault.deposit(requesterFid, amount);
 
     return {
-      requesterAddress,
+      requesterFid,
       depositedAmount: amount,
-      currentBalance: balance - amount,
-      vault: updated,
-      txHash: receipt.transactionHash
-    }
+      remainingWalletBalance: remainingBalance,
+      vaultBalance,
+    };
   }
 
   /**
-   * 리뷰어에게 보상 지급
-   * 1. Vault에서 예치금 확인 및 출금
-   * 2. 온체인에서 실제 토큰 발행(mint)
-   * 
-   * @param requesterAddress - 리뷰 요청자 주소 (예치자)
-   * @param reviewerAddress - 리뷰어 주소 (받는 사람)
-   * @param amount - 지급할 토큰 수량
-   * @returns 트랜잭션 영수증
+   * 리뷰어에게 보상 지급 (FID 기반)
    */
   async sendRewardToReviewer(
-    requesterAddress: string,
-    reviewerAddress: string,
-    amount: number
+    requesterFid: string,
+    reviewerFid: string,
+    amount: number,
   ) {
     // Step 1: Vault에서 예치금 확인
-    const vaultBalance = await this.vault.getBalance(requesterAddress)
-    
+    const vaultBalance = await this.vault.getBalance(requesterFid);
+
     if (vaultBalance < amount) {
       throw new BadRequestException(
-        `예치금 부족: 예치된 ${vaultBalance} 토큰, 요청 ${amount} 토큰`
-      )
+        `예치금 부족: 예치된 ${vaultBalance} MTR, 요청 ${amount} MTR`
+      );
     }
 
-    // Step 2: Vault에서 예치금 차감
-    await this.vault.withdraw(requesterAddress, amount)
+    // Step 2: Vault에서 차감
+    await this.vault.withdraw(requesterFid, amount);
 
-    // Step 3: 서버 지갑 → 리뷰어에게 토큰 전송
-    const receipt = await this.token.transferFromServer(reviewerAddress, amount)
+    // Step 3: 리뷰어 지갑에 추가
+    const reviewerBalance = await this.wallet.receiveFromVault(reviewerFid, amount);
 
     return {
-      requesterAddress,
-      reviewerAddress,
+      requesterFid,
+      reviewerFid,
       rewardAmount: amount,
       remainingVault: vaultBalance - amount,
-      txHash: receipt.transactionHash,
-      blockNumber: receipt.blockNumber
-    }
+      reviewerNewBalance: reviewerBalance,
+    };
   }
 
   /**
-   * 여러 리뷰어에게 토큰 분배
-   * 
-   * @param requesterAddress - 리뷰 요청자 주소
-   * @param distributions - 리뷰어별 지급 금액 배열
-   * @returns 각 리뷰어에 대한 트랜잭션 결과
+   * 여러 리뷰어에게 일괄 분배 (FID 기반)
    */
   async distributeRewards(
-    requesterAddress: string,
-    distributions: Array<{ reviewerAddress: string; amount: number }>
+    requesterFid: string,
+    distributions: Array<{ reviewerFid: string; amount: number }>,
   ) {
     // Step 1: 총 지급액 계산
-    const totalAmount = distributions.reduce((sum, d) => sum + d.amount, 0)
+    const totalAmount = distributions.reduce((sum, d) => sum + d.amount, 0);
 
     // Step 2: Vault 잔액 확인
-    const vaultBalance = await this.vault.getBalance(requesterAddress)
-    
+    const vaultBalance = await this.vault.getBalance(requesterFid);
+
     if (vaultBalance < totalAmount) {
       throw new BadRequestException(
-        `예치금 부족: 예치된 ${vaultBalance} 토큰, 총 지급 요청 ${totalAmount} 토큰`
-      )
+        `예치금 부족: 예치된 ${vaultBalance} MTR, 총 지급 요청 ${totalAmount} MTR`
+      );
     }
 
-    // Step 3: 각 리뷰어에게 순차적으로 지급
-    const results: any[] = []
-    
+    // Step 3: 각 리뷰어에게 순차 지급
+    const results: any[] = [];
+
     for (const dist of distributions) {
       try {
         const result = await this.sendRewardToReviewer(
-          requesterAddress,
-          dist.reviewerAddress,
-          dist.amount
-        )
+          requesterFid,
+          dist.reviewerFid,
+          dist.amount,
+        );
         results.push({
           success: true,
-          ...result
-        })
+          ...result,
+        });
       } catch (error: any) {
         results.push({
           success: false,
-          reviewerAddress: dist.reviewerAddress,
+          reviewerFid: dist.reviewerFid,
           amount: dist.amount,
-          error: error.message
-        })
+          error: error.message,
+        });
       }
     }
 
     return {
       totalDistributed: totalAmount,
       initialVault: vaultBalance,
-      remainingVault: await this.vault.getBalance(requesterAddress),
-      distributions: results
-    }
+      remainingVault: await this.vault.getBalance(requesterFid),
+      distributions: results,
+    };
   }
 
   /**
    * 예치 취소 (리뷰 요청 취소 시)
-   * 
-   * @param requesterAddress - 리뷰 요청자 주소
-   * @param amount - 취소할 금액 (전액 취소 시 생략 가능)
-   * @returns 업데이트된 Vault 정보
    */
-  async cancelDeposit(requesterAddress: string, amount?: number) {
-    const vaultBalance = await this.vault.getBalance(requesterAddress)
-    
-    const withdrawAmount = amount ?? vaultBalance
-    
+  async cancelDeposit(requesterFid: string, amount?: number) {
+    const vaultBalance = await this.vault.getBalance(requesterFid);
+    const withdrawAmount = amount ?? vaultBalance;
+
     if (withdrawAmount > vaultBalance) {
       throw new BadRequestException(
-        `출금 불가: 예치된 ${vaultBalance} 토큰, 요청 ${withdrawAmount} 토큰`
-      )
+        `출금 불가: 예치된 ${vaultBalance} MTR, 요청 ${withdrawAmount} MTR`
+      );
     }
 
-    await this.vault.withdraw(requesterAddress, withdrawAmount)
+    // Vault에서 출금
+    await this.vault.withdraw(requesterFid, withdrawAmount);
+
+    // 사용자 지갑으로 환불
+    await this.wallet.receiveFromVault(requesterFid, withdrawAmount);
 
     return {
-      requesterAddress,
+      requesterFid,
       canceledAmount: withdrawAmount,
-      remainingVault: vaultBalance - withdrawAmount
-    }
+      remainingVault: vaultBalance - withdrawAmount,
+    };
   }
 
   /**
-   * 예치 잔액 조회
+   * 잔액 조회 (FID 기반)
    */
-  async getDepositBalance(requesterAddress: string) {
-    const vaultBalance = await this.vault.getBalance(requesterAddress)
-    const onchainBalance = await this.token.getTokenBalance(requesterAddress)
+  async getDepositBalance(fid: string) {
+    const vaultBalance = await this.vault.getBalance(fid);
+    const walletBalance = await this.wallet.getBalance(fid);
 
     return {
-      requesterAddress,
-      vaultBalance,      // 예치된 금액
-      onchainBalance,    // 온체인 실제 잔액
-    }
+      fid,
+      vaultBalance,    // Vault에 예치된 금액
+      walletBalance,   // 지갑 잔액
+    };
   }
+
+  // ========== 리뷰 CRUD ==========
 
   async getReviewsByHash(reviewHash: string) {
     const items = await this.reviewRepo.find({
       where: { review_hash: reviewHash },
       order: { createdAt: 'DESC' },
-    })
+    });
 
     return {
       items,
       total: items.length,
-    }
+    };
   }
 
   async createReview(dto: CreateReviewDto) {
-    const reviewRequest = await this.reviewRequestRepo.findOne({ where: { id: dto.review_request_id } })
+    const reviewRequest = await this.reviewRequestRepo.findOne({
+      where: { id: dto.review_request_id },
+    });
+
     if (!reviewRequest) {
-      throw new NotFoundException(`Review request ${dto.review_request_id} not found`)
+      throw new NotFoundException(`Review request ${dto.review_request_id} not found`);
     }
 
     const review = this.reviewRepo.create({
@@ -234,8 +203,8 @@ export class ReviewService {
       rating: dto.rating,
       summary: dto.summary,
       review_request: reviewRequest,
-    })
+    });
 
-    return this.reviewRepo.save(review)
+    return this.reviewRepo.save(review);
   }
 }

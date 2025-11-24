@@ -12,72 +12,61 @@ export class ReviewController {
   constructor(private readonly review: ReviewService) {}
 
   @Post('deposit')
-  @ApiOperation({ summary: '토큰 예치' })
+  @ApiOperation({ summary: '토큰 예치 (FID 기반, approve 불필요)' })
   @ApiResponse({ status: 200, description: '예치 성공' })
   @ApiResponse({ status: 400, description: '잔액 부족' })
   async deposit(@Body() dto: DepositDto) {
-    const result = await this.review.depositTokens(
-      dto.requesterAddress,
-      dto.amount
-    );
-    return result;
+    return this.review.depositTokens(dto.requesterFid, dto.amount);
   }
 
   @Post('reward')
-  @ApiOperation({ summary: '리뷰어에게 보상 지급' })
+  @ApiOperation({ summary: '리뷰어에게 보상 지급 (FID 기반)' })
   @ApiResponse({ status: 200, description: '보상 지급 성공' })
   @ApiResponse({ status: 400, description: '예치금 부족' })
   async reward(@Body() dto: RewardDto) {
-    const result = await this.review.sendRewardToReviewer(
-      dto.requesterAddress,
-      dto.reviewerAddress,
-      dto.amount
+    return this.review.sendRewardToReviewer(
+      dto.requesterFid,
+      dto.reviewerFid,
+      dto.amount,
     );
-    return result;
   }
 
   @Post('distribute')
-  @ApiOperation({ summary: '여러 리뷰어에게 일괄 분배' })
+  @ApiOperation({ summary: '여러 리뷰어에게 일괄 분배 (FID 기반)' })
   async distribute(@Body() dto: DistributeDto) {
-    const result = await this.review.distributeRewards(
-      dto.requesterAddress,
-      dto.distributions
+    return this.review.distributeRewards(
+      dto.requesterFid,
+      dto.distributions,
     );
-    return result;
   }
 
   @Post('cancel')
-  @ApiOperation({ summary: '예치 취소' })
+  @ApiOperation({ summary: '예치 취소 (FID 기반)' })
   async cancel(@Body() dto: CancelDto) {
-    const result = await this.review.cancelDeposit(
-      dto.requesterAddress,
-      dto.amount
-    );
-    return result;
+    return this.review.cancelDeposit(dto.requesterFid, dto.amount);
   }
 
   @Get('balance')
-  @ApiOperation({ summary: '예치 잔액 조회' })
-  @ApiQuery({ 
-    name: 'address', 
-    required: true, 
-    example: '0x6b4f81F0391A2c977d78A3156390DA001D3baBa7',
-    description: '지갑 주소'
+  @ApiOperation({ summary: '예치 잔액 조회 (FID 기반)' })
+  @ApiQuery({
+    name: 'fid',
+    required: true,
+    example: '1366990',
+    description: 'Farcaster FID',
   })
-  @ApiResponse({ 
-    status: 200, 
+  @ApiResponse({
+    status: 200,
     description: '잔액 조회 성공',
     schema: {
       type: 'object',
       properties: {
-        requesterAddress: { type: 'string' },
+        fid: { type: 'string' },
         vaultBalance: { type: 'number' },
-        onchainBalance: { type: 'number' }
-      }
-    }
+        walletBalance: { type: 'number' },
+      },
+    },
   })
-  async getBalance(@Query('address') address: string) {
-    const result = await this.review.getDepositBalance(address);
-    return result;
+  async getBalance(@Query('fid') fid: string) {
+    return this.review.getDepositBalance(fid);
   }
 }

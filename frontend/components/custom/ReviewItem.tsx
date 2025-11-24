@@ -47,8 +47,30 @@ export default function ReviewItem({
           throw new Error('캐스트 데이터를 불러올 수 없습니다.');
         }
 
-        const data: CastData = await response.json();
-        setCastData(data);
+        const result = await response.json();
+        console.log('API 응답:', result);
+
+        // Snapchain API 응답 구조: data.castAddBody
+        const castAddBody = result?.data?.castAddBody;
+
+        if (!castAddBody) {
+          throw new Error('캐스트 데이터가 없습니다.');
+        }
+
+        const parsedData: CastData = {};
+
+        // 텍스트 추출
+        if (castAddBody.text && castAddBody.text.trim() !== '') {
+          parsedData.text = castAddBody.text;
+        }
+
+        // embeds 추출
+        if (castAddBody.embeds && castAddBody.embeds.length > 0) {
+          parsedData.embeds = castAddBody.embeds;
+        }
+
+        console.log('파싱된 캐스트 데이터:', parsedData);
+        setCastData(parsedData);
         setError(null);
       } catch (err) {
         console.error('캐스트 데이터 조회 실패:', err);

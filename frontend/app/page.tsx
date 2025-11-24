@@ -35,18 +35,18 @@ export default function RootPage() {
 
           setUser(userData);
 
-          // 잠시 후 홈으로 리다이렉트
+          // 잠시 후 리뷰 요청 페이지로 리다이렉트
           setTimeout(() => {
-            router.push("/home");
+            router.push("/review-request");
           }, 1000);
         } else {
           // 웹 접속인 경우
           alert("web");
           setIsLoading(false);
 
-          // 웹 접속도 홈으로 리다이렉트
+          // 웹 접속도 리뷰 요청 페이지로 리다이렉트
           setTimeout(() => {
-            router.push("/home");
+            router.push("/review-request");
           }, 1000);
         }
 

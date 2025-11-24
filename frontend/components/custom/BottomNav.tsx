@@ -2,14 +2,9 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, FileText, ClipboardList, User } from "lucide-react";
+import { FileText, ClipboardList, User } from "lucide-react";
 
 const tabs = [
-  {
-    name: "홈",
-    href: "/home",
-    icon: Home,
-  },
   {
     name: "리뷰 요청",
     href: "/review-request",

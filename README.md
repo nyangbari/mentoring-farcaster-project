@@ -1,10 +1,10 @@
 
-**ºü¸¥ CLI ¿ä¾à (Windows - cmd.exe)**
-**Çù¾÷ÀÚ ºü¸¥ ½ÃÀÛ (Windows - cmd.exe)**
+**ë¹ ë¥¸ CLI ìš”ì•½ (Windows - cmd.exe)**
+**í˜‘ì—…ì ë¹ ë¥¸ ì‹œì‘ (Windows - cmd.exe)**
 
-¾Æ·¡´Â ·ÎÄÃ¿¡¼­ ÀÛ¾÷À» ½ÃÀÛÇÒ ¶§ Á¤¸»·Î ÇÊ¿äÇÑ ÃÖ¼Ò ¸í·ÉµéÀÔ´Ï´Ù. ÀÌ ¼ø¼­´ë·Î ½ÇÇàÇÏ¸é Docker Áß½ÉÀÇ °³¹ßÈ¯°æÀÌ ÁØºñµË´Ï´Ù.
+ì•„ë˜ëŠ” ë¡œì»¬ì—ì„œ ì‘ì—…ì„ ì‹œì‘í•  ë•Œ ì •ë§ë¡œ í•„ìš”í•œ ìµœì†Œ ëª…ë ¹ë“¤ì…ë‹ˆë‹¤. ì´ ìˆœì„œëŒ€ë¡œ ì‹¤í–‰í•˜ë©´ Docker ì¤‘ì‹¬ì˜ ê°œë°œí™˜ê²½ì´ ì¤€ë¹„ë©ë‹ˆë‹¤.
 
-1) ÀúÀå¼Ò º¹Á¦ ¹× ºê·£Ä¡
+1) ì €ì¥ì†Œ ë³µì œ ë° ë¸Œëœì¹˜
 
 ```bat
 git clone <REPO_URL>
@@ -14,75 +14,41 @@ git checkout dev
 git pull origin dev
 ```
 
-2) È¯°æÆÄÀÏ º¹»ç (ÇÊ¿äÇÑ °æ¿ì)
+2) í™˜ê²½íŒŒì¼ ë³µì‚¬ (í•„ìš”í•œ ê²½ìš°)
 
 ```bat
 copy .env.example .env
 notepad .env
 ```
 
-3) (±ÇÀå) ÀÌ¹ÌÁö ¹Ì¸® Ç®±â ? ³×Æ®¿öÅ© Áö¿¬ ÃÖ¼ÒÈ­
+3) (ê¶Œì¥) ì´ë¯¸ì§€ ë¯¸ë¦¬ í’€ê¸° ? ë„¤íŠ¸ì›Œí¬ ì§€ì—° ìµœì†Œí™”
 
 ```bat
 docker-compose pull
 ```
 
-4) °³¹ß¿ë ÄÁÅ×ÀÌ³Ê ½ÇÇà (ºôµå Æ÷ÇÔ)
+4) ê°œë°œìš© ì»¨í…Œì´ë„ˆ ì‹¤í–‰ (ë¹Œë“œ í¬í•¨)
 
 ```bat
 docker-compose up --build
 ```
 
-¶Ç´Â ¹é±×¶ó¿îµå¿¡¼­ ½ÇÇàÇÏ·Á¸é:
+ë˜ëŠ” ë°±ê·¸ë¼ìš´ë“œì—ì„œ ì‹¤í–‰í•˜ë ¤ë©´:
 
 ```bat
 docker-compose up -d --build
 docker-compose logs -f app
 ```
 
-5) ¾Û È®ÀÎ
+5) ì•± í™•ì¸
 
 - Swagger: http://localhost:3000/api
-- pgAdmin: http://localhost:5050 (Compose¿¡ ¼³Á¤µÈ ÀÌ¸ŞÀÏ/ºñ¹Ğ¹øÈ£ »ç¿ë)
+- pgAdmin: http://localhost:5050 (Composeì— ì„¤ì •ëœ ì´ë©”ì¼/ë¹„ë°€ë²ˆí˜¸ ì‚¬ìš©)
 
-6) DB Á÷Á¢ Á¶È¸ (¼±ÅÃ)
-
-```bat
-docker-compose exec db psql -U postgres -d nestdb -c "SELECT id, user_id, title, createdAt FROM \"review_request\" ORDER BY id DESC LIMIT 10;"
-```
-
-7) ÄÚµå º¯°æ Àû¿ë
-
-- ÄÁÅ×ÀÌ³Ê ³»¿¡¼­ °³¹ß ¸ğµå(`start:dev`)°¡ µ¿ÀÛÇÏ¸é ÆÄÀÏ º¯°æÀº ÀÚµ¿ ¹İ¿µµË´Ï´Ù.
-- ÇÊ¿ä ½Ã ¼­ºñ½º¸¸ Àçºôµå/Àç½ÃÀÛ:
+6) DB ì§ì ‘ ì¡°íšŒ (ì„ íƒ)
 
 ```bat
-docker-compose up -d --build app
-docker-compose restart app
-```
-
-8) (¿É¼Ç) ·ÎÄÃ pnpm °³¹ß È¯°æ ? Docker ´ë½Å ·ÎÄÃ¿¡¼­ ½ÇÇàÇÏ·Á¸é
-
-```bat
-corepack enable
-corepack prepare pnpm@latest --activate
-pnpm install
-pnpm run start:dev
-```
-
-¼³¸í(°£´Ü)
-- ±ÇÀå ¿öÅ©ÇÃ·Î: Docker ±â¹İÀ¸·Î `docker-compose up --build` »ç¿ë. ·ÎÄÃ pnpmÀº ¼±ÅÃÀûÀÔ´Ï´Ù.
-- `.env`°¡ ÇÊ¿äÇÏ¸é ¹İµå½Ã `copy .env.example .env`·Î ÁØºñÇÏ¼¼¿ä.
-- pgAdmin µ¥ÀÌÅÍ´Â ÄÁÅ×ÀÌ³Ê º¼·ı¿¡ ÀúÀåµË´Ï´Ù(´ÙÀ½ ½ÇÇàºÎÅÍ´Â ÃÊ±âÈ­ ÀÛ¾÷ÀÌ ¹İº¹µÇÁö ¾Ê½À´Ï´Ù).
-
-ÇÊ¿äÇÏ¸é Á¦°¡ ´ÙÀ½µµ ÁØºñÇØ µå¸³´Ï´Ù:
-- ¾ÆÁÖ °£´ÜÇÑ ·ÎÄÃ °³¹ß¿ë `pnpm` ¸í·É ½ºÅ©¸³Æ® ¼¼Æ®
-- Çù¾÷¿ë Ã¼Å©¸®½ºÆ®(Æ÷Æ®, ±ÇÇÑ ¹®Á¦ µî) ÇÑ ÆäÀÌÁö
-- README »ó´Ü¿¡ ÀÌ ¿ä¾àÀ» À¯ÁöÇÏ°í »ó¼¼ °¡ÀÌµå´Â `CONTRIBUTING.md`·Î ºĞ¸®
-
----
-
-ÀÌ ¹®¼­·Î ÃæºĞÇÑÁö, ¾Æ´Ï¸é ´õ ´ÜÃàµÈ ÇÑ ÁÙ ¿ä¾à(¿¹: 3ÁÙ·Î¸¸ ³²±â±â)À» ¿øÇÏ½Ã¸é ¾Ë·ÁÁÖ¼¼¿ä.
-```bat
-
-cd backend
+docker-compose exec db psql -U postgres -d nestdb -c "SELECT id, user_id, title, createdAt FROM \"review_request\" ORê°€ì„¤ëª…
+- ê¶Œì¥ ì›Œí¬í”Œë¡œ: Docker ê¸°ë°˜ìœ¼ë¡œ `docker-compose up --build` ì‚¬ìš©. ë¡œì»¬ pnpmì€ ì„ íƒì ì…ë‹ˆë‹¤.
+- `.env`ê°€ í•„ìš”í•˜ë©´ ë°˜ë“œì‹œ `copy .env.example .env`ë¡œ ì¤€ë¹„í•˜ì„¸ìš”.
+- pgAdmin ë°ì´í„°ëŠ” ì»¨í…Œì´ë„ˆ ë³¼ë¥¨ì— ì €ì¥ë©ë‹ˆë‹¤(ë‹¤ìŒ ì‹¤í–‰ë¶€í„°ëŠ” ì´ˆê¸°í™” ì‘ì—…ì´ ë°˜ë³µë˜ì§€ ì•ŠìŠµë‹ˆë‹¤).
